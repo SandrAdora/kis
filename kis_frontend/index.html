@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KIS – Patientenverwaltung</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    /* ── Status colors ── */
+    .status-scheduled  { background:#dbeafe; color:#1d4ed8; }
+    .status-completed  { background:#dcfce7; color:#15803d; }
+    .status-cancelled  { background:#fee2e2; color:#dc2626; }
+    .bed-free          { background:#dcfce7; color:#15803d; border-color:#86efac; }
+    .bed-occupied      { background:#fee2e2; color:#dc2626; border-color:#fca5a5; }
+    .bed-reserved      { background:#fef9c3; color:#92400e; border-color:#fde68a; }
+    .bed-maintenance   { background:#f3f4f6; color:#6b7280; border-color:#d1d5db; }
+
+    /* ── Sidebar ── */
+    .nav-item { display:flex; align-items:center; gap:0.6rem; padding:0.5rem 1rem;
+      font-size:0.875rem; color:#374151; cursor:pointer; border-left:3px solid transparent;
+      transition:all 0.15s; }
+    .nav-item:hover { background:#eff6ff; color:#1d4ed8; border-left-color:#93c5fd; }
+    .nav-item.active { background:#dbeafe; color:#1d4ed8; border-left-color:#1d4ed8; font-weight:600; }
+    .nav-section { font-size:0.65rem; color:#9ca3af; text-transform:uppercase;
+      letter-spacing:0.1em; padding:0.8rem 1rem 0.2rem; font-weight:700; }
+
+    /* ── Animations ── */
+    @keyframes fadeUp   { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes fadeDown { from{opacity:0;transform:translateY(-14px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes scaleIn  { from{opacity:0;transform:scale(0.96)} to{opacity:1;transform:scale(1)} }
+    @keyframes rowIn    { from{opacity:0;transform:translateX(-10px)} to{opacity:1;transform:translateX(0)} }
+    @keyframes spin     { to{transform:rotate(360deg)} }
+    @keyframes pulse-blue {
+      0%  {box-shadow:0 0 0 0 rgba(29,78,216,.3)}
+      70% {box-shadow:0 0 0 8px rgba(29,78,216,0)}
+      100%{box-shadow:0 0 0 0 rgba(29,78,216,0)}
+    }
+    .anim-header  { animation:fadeDown .45s ease both; }
+    .anim-panel   { animation:scaleIn .35s cubic-bezier(.16,1,.3,1) both; }
+    .anim-detail  { animation:fadeUp .4s cubic-bezier(.16,1,.3,1) both; }
+    .row-anim     { animation:rowIn .3s ease both; }
+    .stat-card    { animation:fadeUp .4s ease both; }
+    .spinner { display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);
+      border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:5px; }
+
+    input,select,textarea { transition:border-color .2s,box-shadow .2s,transform .15s; }
+    input:focus,select:focus,textarea:focus { transform:translateY(-1px); }
+    button[type="submit"] { transition:background .18s,transform .15s,box-shadow .2s; }
+    button[type="submit"]:hover { transform:translateY(-2px); box-shadow:0 4px 14px rgba(29,78,216,.35); }
+    button[type="submit"]:active { transform:scale(.97); }
+
+    /* ── Calendar ── */
+    .cal-day { min-height:80px; border:1px solid #e5e7eb; border-radius:6px; padding:4px;
+      transition:background .15s; }
+    .cal-day:hover { background:#f9fafb; }
+    .cal-day.today { border-color:#1d4ed8; background:#eff6ff; }
+    .cal-day.other-month { background:#f9fafb; opacity:.6; }
+    .cal-appt { font-size:0.68rem; background:#dbeafe; color:#1d4ed8; border-radius:3px;
+      padding:1px 4px; margin-top:2px; truncate:overflow; white-space:nowrap; overflow:hidden;
+      text-overflow:ellipsis; cursor:pointer; transition:background .15s; }
+    .cal-appt:hover { background:#bfdbfe; }
+    .cal-appt.completed { background:#dcfce7; color:#15803d; }
+    .cal-appt.cancelled { background:#fee2e2; color:#dc2626; }
+
+    /* ── Bed grid ── */
+    .bed-card { border:1.5px solid; border-radius:10px; padding:.75rem; cursor:pointer;
+      transition:transform .15s,box-shadow .15s; }
+    .bed-card:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,.1); }
+
+    /* ── Week view ── */
+    .week-col { flex:1; min-width:0; }
+    .week-header { font-size:.75rem; font-weight:700; text-align:center; padding:.3rem;
+      background:#f3f4f6; border-radius:6px 6px 0 0; border:1px solid #e5e7eb; border-bottom:none; }
+    .week-body { border:1px solid #e5e7eb; border-radius:0 0 6px 6px; min-height:200px; padding:4px; }
+    .week-today .week-header { background:#dbeafe; color:#1d4ed8; }
+    .week-today .week-body { background:#f0f7ff; }
+
+    .msg-anim { animation:fadeUp .3s ease both; }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans flex flex-col">
+
+<!-- ═══ Header ═══ -->
+<header class="anim-header bg-blue-800 text-white px-5 py-3 flex items-center gap-3 shadow z-10">
+  <div class="text-xl font-bold tracking-widest">KIS</div>
+  <div class="h-5 w-px bg-blue-600"></div>
+  <div class="text-sm text-blue-200">Krankenhausinformationssystem</div>
+</header>
+
+<div class="flex flex-1 overflow-hidden">
+
+  <!-- ═══ Sidebar ═══ -->
+  <aside class="w-56 min-w-56 bg-white border-r border-gray-200 flex flex-col overflow-y-auto anim-header">
+    <div class="nav-section">Übersicht</div>
+    <div class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard')">
+      <span>📊</span> Dashboard
+    </div>
+    <div class="nav-item" id="nav-calendar" onclick="showPage('calendar')">
+      <span>📅</span> Kalender
+    </div>
+
+    <div class="nav-section">Patienten</div>
+    <div class="nav-item" id="nav-patients" onclick="showPage('patients')">
+      <span>👥</span> Patientenliste
+    </div>
+    <div class="nav-item" id="nav-new-patient" onclick="showPage('new-patient')">
+      <span>➕</span> Neue Patientenakte
+    </div>
+
+    <div class="nav-section">Termine</div>
+    <div class="nav-item" id="nav-new-appointment" onclick="showPage('new-appointment')">
+      <span>🗓</span> Neuer Termin
+    </div>
+
+    <div class="nav-section">Stationen</div>
+    <div class="nav-item" id="nav-stations" onclick="showPage('stations')">
+      <span>🏥</span> Stationen & Betten
+    </div>
+    <div class="nav-item" id="nav-new-station" onclick="showPage('new-station')">
+      <span>➕</span> Neue Station
+    </div>
+  </aside>
+
+  <!-- ═══ Main ═══ -->
+  <main class="flex-1 overflow-y-auto p-6">
+
+    <!-- ── Dashboard ── -->
+    <div id="page-dashboard" class="space-y-6">
+      <h1 class="text-xl font-bold text-gray-800">Dashboard</h1>
+
+      <!-- Stat cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4" id="statCards">
+        <div class="stat-card bg-white rounded-xl shadow p-4" style="animation-delay:.0s">
+          <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Patienten gesamt</div>
+          <div class="text-3xl font-bold text-blue-700" id="stat-patients">–</div>
+        </div>
+        <div class="stat-card bg-white rounded-xl shadow p-4" style="animation-delay:.08s">
+          <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Termine heute</div>
+          <div class="text-3xl font-bold text-indigo-600" id="stat-today">–</div>
+        </div>
+        <div class="stat-card bg-white rounded-xl shadow p-4" style="animation-delay:.16s">
+          <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Offene Termine</div>
+          <div class="text-3xl font-bold text-orange-500" id="stat-open">–</div>
+        </div>
+        <div class="stat-card bg-white rounded-xl shadow p-4" style="animation-delay:.24s">
+          <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Freie Betten</div>
+          <div class="text-3xl font-bold text-green-600" id="stat-beds">–</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <!-- Bettenbelegung chart -->
+        <div class="bg-white rounded-xl shadow p-5">
+          <h2 class="text-sm font-semibold text-gray-700 mb-3">Bettenbelegung</h2>
+          <canvas id="bedChart" style="max-height:220px;"></canvas>
+        </div>
+
+        <!-- Upcoming appointments -->
+        <div class="bg-white rounded-xl shadow p-5">
+          <h2 class="text-sm font-semibold text-gray-700 mb-3">Nächste Termine</h2>
+          <div id="upcomingList" class="space-y-2 text-sm"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Kalender ── -->
+    <div id="page-calendar" class="hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <h1 class="text-xl font-bold text-gray-800">Kalender</h1>
+        <div class="flex gap-2 items-center">
+          <button onclick="calPrev()" class="px-3 py-1.5 bg-white border rounded shadow-sm text-sm hover:bg-gray-50 transition">‹</button>
+          <span id="calTitle" class="text-sm font-semibold text-gray-700 w-40 text-center"></span>
+          <button onclick="calNext()" class="px-3 py-1.5 bg-white border rounded shadow-sm text-sm hover:bg-gray-50 transition">›</button>
+          <div class="flex gap-1 ml-2">
+            <button class="cal-view-btn active px-3 py-1.5 bg-blue-700 text-white rounded text-xs font-medium" onclick="setCalView('month')">Monat</button>
+            <button class="cal-view-btn px-3 py-1.5 bg-white border rounded text-xs font-medium hover:bg-gray-50" onclick="setCalView('week')">Woche</button>
+            <button class="cal-view-btn px-3 py-1.5 bg-white border rounded text-xs font-medium hover:bg-gray-50" onclick="setCalView('day')">Tag</button>
+          </div>
+        </div>
+      </div>
+      <div id="calContainer" class="bg-white rounded-xl shadow p-4 anim-panel"></div>
+    </div>
+
+    <!-- ── Patientenliste ── -->
+    <div id="page-patients" class="hidden space-y-4">
+      <h1 class="text-xl font-bold text-gray-800">Patientenliste</h1>
+      <div class="bg-white rounded-xl shadow p-5">
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-sm text-gray-500" id="patientCount"></span>
+          <input id="searchInput" type="text" placeholder="Suche nach Name…"
+            class="border rounded px-3 py-1.5 text-sm w-56 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            oninput="filterPatients()" />
+        </div>
+        <table class="w-full text-sm text-left">
+          <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
+            <tr>
+              <th class="px-4 py-2">Name</th>
+              <th class="px-4 py-2">Geburtsdatum</th>
+              <th class="px-4 py-2">Geschlecht</th>
+              <th class="px-4 py-2">Telefon</th>
+              <th class="px-4 py-2">Krankenkasse</th>
+              <th class="px-4 py-2">Aktionen</th>
+            </tr>
+          </thead>
+          <tbody id="patientTableBody" class="divide-y divide-gray-100">
+            <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">Lade…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="patientDetail" class="hidden bg-white rounded-xl shadow p-5 anim-detail">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-800" id="detailName"></h3>
+          <button onclick="closeDetail()" class="text-gray-400 hover:text-gray-600 text-lg">✕</button>
+        </div>
+        <div class="grid grid-cols-2 gap-3 text-sm mb-5" id="detailInfo"></div>
+        <h4 class="font-semibold text-gray-700 mb-2 text-sm">Termine</h4>
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
+            <tr>
+              <th class="px-3 py-2">Datum</th><th class="px-3 py-2">Uhrzeit</th>
+              <th class="px-3 py-2">Grund</th><th class="px-3 py-2">Arzt</th>
+              <th class="px-3 py-2">Status</th>
+            </tr>
+          </thead>
+          <tbody id="detailAppointments" class="divide-y divide-gray-100"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Neue Patientenakte ── -->
+    <div id="page-new-patient" class="hidden">
+      <h1 class="text-xl font-bold text-gray-800 mb-5">Neue Patientenakte anlegen</h1>
+      <div class="bg-white rounded-xl shadow p-5 max-w-2xl anim-panel">
+        <form id="patientForm" onsubmit="submitPatient(event)" class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">Vorname *</label><input name="first_name" required class="form-input" /></div>
+            <div><label class="form-label">Nachname *</label><input name="last_name" required class="form-input" /></div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">Geburtsdatum *</label><input name="date_of_birth" type="date" required class="form-input" /></div>
+            <div><label class="form-label">Geschlecht *</label>
+              <select name="gender" required class="form-input">
+                <option value="">– wählen –</option>
+                <option value="M">Männlich</option>
+                <option value="F">Weiblich</option>
+                <option value="D">Divers</option>
+              </select>
+            </div>
+          </div>
+          <div><label class="form-label">Adresse</label><textarea name="address" rows="2" class="form-input"></textarea></div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">Telefon</label><input name="phone" type="tel" class="form-input" /></div>
+            <div><label class="form-label">E-Mail</label><input name="email" type="email" class="form-input" /></div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">Versicherungsnummer</label><input name="insurance_number" class="form-input" /></div>
+            <div><label class="form-label">Krankenkasse</label><input name="insurance_provider" class="form-input" /></div>
+          </div>
+          <div id="patientFormMsg" class="hidden text-sm rounded px-3 py-2"></div>
+          <button type="submit" class="btn-primary">Patientenakte anlegen</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── Neuer Termin ── -->
+    <div id="page-new-appointment" class="hidden">
+      <h1 class="text-xl font-bold text-gray-800 mb-5">Neuen Termin erstellen</h1>
+      <div class="bg-white rounded-xl shadow p-5 max-w-2xl anim-panel">
+        <form id="appointmentForm" onsubmit="submitAppointment(event)" class="space-y-4">
+          <div><label class="form-label">Patient *</label>
+            <select name="patient" id="appointmentPatientSelect" required class="form-input">
+              <option value="">– Patient auswählen –</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">Datum *</label><input name="date" type="date" required class="form-input" /></div>
+            <div><label class="form-label">Uhrzeit *</label><input name="time" type="time" required class="form-input" /></div>
+          </div>
+          <div><label class="form-label">Grund *</label><input name="reason" required class="form-input" placeholder="z. B. Routineuntersuchung" /></div>
+          <div><label class="form-label">Arzt / Ärztin</label><input name="doctor" class="form-input" placeholder="z. B. Dr. Müller" /></div>
+          <div><label class="form-label">Status</label>
+            <select name="status" class="form-input">
+              <option value="scheduled">Geplant</option>
+              <option value="completed">Abgeschlossen</option>
+              <option value="cancelled">Abgesagt</option>
+            </select>
+          </div>
+          <div><label class="form-label">Notizen</label><textarea name="notes" rows="2" class="form-input"></textarea></div>
+          <div id="appointmentFormMsg" class="hidden text-sm rounded px-3 py-2"></div>
+          <button type="submit" class="btn-primary">Termin speichern</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── Stationen & Betten ── -->
+    <div id="page-stations" class="hidden space-y-5">
+      <div class="flex items-center justify-between">
+        <h1 class="text-xl font-bold text-gray-800">Stationen & Betten</h1>
+        <button onclick="showPage('new-station')" class="btn-primary text-sm px-4 py-2">+ Neue Station</button>
+      </div>
+      <div id="stationsList" class="space-y-5"></div>
+    </div>
+
+    <!-- ── Neue Station ── -->
+    <div id="page-new-station" class="hidden">
+      <h1 class="text-xl font-bold text-gray-800 mb-5">Neue Station anlegen</h1>
+      <div class="bg-white rounded-xl shadow p-5 max-w-xl anim-panel">
+        <form id="stationForm" onsubmit="submitStation(event)" class="space-y-4">
+          <div><label class="form-label">Stationsname *</label><input name="name" required class="form-input" placeholder="z. B. Station A – Innere Medizin" /></div>
+          <div><label class="form-label">Beschreibung</label><textarea name="description" rows="2" class="form-input"></textarea></div>
+          <div><label class="form-label">Etage</label><input name="floor" type="number" value="0" class="form-input" /></div>
+          <div id="stationFormMsg" class="hidden text-sm rounded px-3 py-2"></div>
+          <button type="submit" class="btn-primary">Station anlegen</button>
+        </form>
+
+        <hr class="my-6 border-gray-200" />
+
+        <h2 class="text-base font-semibold text-gray-700 mb-4">Bett hinzufügen</h2>
+        <form id="bedForm" onsubmit="submitBed(event)" class="space-y-4">
+          <div><label class="form-label">Station *</label>
+            <select name="station" id="bedStationSelect" required class="form-input">
+              <option value="">– Station auswählen –</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">Bettnummer *</label><input name="bed_number" required class="form-input" placeholder="z. B. 101-A" /></div>
+            <div><label class="form-label">Zimmer</label><input name="room" class="form-input" placeholder="z. B. Zimmer 12" /></div>
+          </div>
+          <div><label class="form-label">Status</label>
+            <select name="status" class="form-input">
+              <option value="free">Frei</option>
+              <option value="occupied">Belegt</option>
+              <option value="reserved">Reserviert</option>
+              <option value="maintenance">Außer Betrieb</option>
+            </select>
+          </div>
+          <div><label class="form-label">Patient (optional)</label>
+            <select name="patient" id="bedPatientSelect" class="form-input">
+              <option value="">– kein Patient –</option>
+            </select>
+          </div>
+          <div><label class="form-label">Notizen</label><textarea name="notes" rows="2" class="form-input"></textarea></div>
+          <div id="bedFormMsg" class="hidden text-sm rounded px-3 py-2"></div>
+          <button type="submit" class="btn-primary">Bett hinzufügen</button>
+        </form>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── Tailwind utility classes via @apply workaround ── -->
+<style>
+  .form-label { display:block; font-size:.875rem; font-weight:500; color:#374151; margin-bottom:.25rem; }
+  .form-input  { width:100%; border:1px solid #d1d5db; border-radius:.375rem; padding:.5rem .75rem;
+    font-size:.875rem; outline:none; transition:border-color .2s,box-shadow .2s; }
+  .form-input:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.15); }
+  .btn-primary { background:#1d4ed8; color:#fff; border-radius:.375rem; padding:.5rem 1.25rem;
+    font-size:.875rem; font-weight:500; cursor:pointer; border:none;
+    transition:background .18s,transform .15s,box-shadow .2s; }
+  .btn-primary:hover { background:#1e40af; transform:translateY(-2px); box-shadow:0 4px 14px rgba(29,78,216,.35); }
+  .btn-primary:active { transform:scale(.97); }
+</style>
+
+<script>
+  const API = 'http://127.0.0.1:8000/api';
+  let allPatients = [], allStations = [], allAppointments = [];
+  let calView = 'month', calDate = new Date();
+  let bedChart = null;
+
+  // ══════════════════════════════════════════════════════
+  // Navigation
+  // ══════════════════════════════════════════════════════
+  const PAGES = ['dashboard','calendar','patients','new-patient','new-appointment','stations','new-station'];
+  function showPage(name) {
+    PAGES.forEach(p => {
+      document.getElementById(`page-${p}`).classList.add('hidden');
+      document.getElementById(`nav-${p}`)?.classList.remove('active');
+    });
+    const panel = document.getElementById(`page-${name}`);
+    panel.classList.remove('hidden', 'anim-panel');
+    void panel.offsetWidth;
+    panel.classList.add('anim-panel');
+    document.getElementById(`nav-${name}`)?.classList.add('active');
+
+    if (name === 'dashboard')        loadDashboard();
+    if (name === 'calendar')         renderCalendar();
+    if (name === 'patients')         renderPatientTable(allPatients);
+    if (name === 'stations')         renderStations();
+    if (name === 'new-appointment')  populateSelect('appointmentPatientSelect', allPatients);
+    if (name === 'new-station')      { populateSelect('bedStationSelect', allStations, 'name'); populateSelect('bedPatientSelect', allPatients); }
+  }
+
+  // ══════════════════════════════════════════════════════
+  // Load all data on boot
+  // ══════════════════════════════════════════════════════
+  async function bootLoad() {
+    const [pRes, sRes] = await Promise.all([
+      fetch(`${API}/patients/`).catch(()=>null),
+      fetch(`${API}/stations/`).catch(()=>null),
+    ]);
+    if (pRes?.ok) allPatients = await pRes.json();
+    if (sRes?.ok) allStations = await sRes.json();
+    loadDashboard();
+  }
+
+  // ══════════════════════════════════════════════════════
+  // Dashboard
+  // ══════════════════════════════════════════════════════
+  async function loadDashboard() {
+    try {
+      const res = await fetch(`${API}/dashboard-stats/`);
+      const d = await res.json();
+      document.getElementById('stat-patients').textContent = d.total_patients;
+      document.getElementById('stat-today').textContent    = d.todays_appointments;
+      document.getElementById('stat-open').textContent     = d.open_appointments;
+      document.getElementById('stat-beds').textContent     = `${d.free_beds} / ${d.total_beds}`;
+
+      // Bed chart
+      if (bedChart) bedChart.destroy();
+      bedChart = new Chart(document.getElementById('bedChart'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Frei', 'Belegt', 'Reserviert', 'Außer Betrieb'],
+          datasets: [{ data: [d.free_beds, d.occupied_beds, d.reserved_beds,
+              d.total_beds - d.free_beds - d.occupied_beds - d.reserved_beds],
+            backgroundColor: ['#16a34a','#dc2626','#d97706','#9ca3af'],
+            borderWidth: 0 }]
+        },
+        options: { responsive:true, plugins:{ legend:{ position:'right', labels:{font:{size:12}} } } }
+      });
+
+      // Upcoming list
+      const ul = document.getElementById('upcomingList');
+      if (!d.upcoming_appointments.length) {
+        ul.innerHTML = '<p class="text-gray-400 text-sm">Keine offenen Termine.</p>';
+      } else {
+        ul.innerHTML = d.upcoming_appointments.map(a => `
+          <div class="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 row-anim">
+            <div>
+              <div class="font-medium text-gray-800 text-sm">${a.patient_name}</div>
+              <div class="text-xs text-gray-500">${formatDate(a.date)} · ${a.time.slice(0,5)} · ${a.reason}</div>
+            </div>
+            <span class="status-${a.status} text-xs px-2 py-0.5 rounded-full font-medium">${statusLabel(a.status)}</span>
+          </div>`).join('');
+      }
+    } catch { console.error('Dashboard load failed'); }
+  }
+
+  // ══════════════════════════════════════════════════════
+  // Calendar
+  // ══════════════════════════════════════════════════════
+  function setCalView(v) {
+    calView = v;
+    document.querySelectorAll('.cal-view-btn').forEach(b => {
+      b.classList.toggle('active', false);
+      b.className = 'cal-view-btn px-3 py-1.5 bg-white border rounded text-xs font-medium hover:bg-gray-50';
+    });
+    event.target.className = 'cal-view-btn active px-3 py-1.5 bg-blue-700 text-white rounded text-xs font-medium';
+    renderCalendar();
+  }
+  function calPrev() { calView==='month' ? calDate.setMonth(calDate.getMonth()-1)
+    : calView==='week' ? calDate.setDate(calDate.getDate()-7)
+    : calDate.setDate(calDate.getDate()-1); renderCalendar(); }
+  function calNext() { calView==='month' ? calDate.setMonth(calDate.getMonth()+1)
+    : calView==='week' ? calDate.setDate(calDate.getDate()+7)
+    : calDate.setDate(calDate.getDate()+1); renderCalendar(); }
+
+  async function renderCalendar() {
+    const container = document.getElementById('calContainer');
+    const today = new Date(); today.setHours(0,0,0,0);
+
+    let param = '';
+    if (calView === 'month') {
+      const m = `${calDate.getFullYear()}-${String(calDate.getMonth()+1).padStart(2,'0')}`;
+      param = `month=${m}`;
+      document.getElementById('calTitle').textContent =
+        calDate.toLocaleDateString('de-DE', {month:'long', year:'numeric'});
+    } else if (calView === 'week') {
+      const mon = getMonday(calDate);
+      const sun = new Date(mon); sun.setDate(sun.getDate()+6);
+      param = `week=${getISOWeek(calDate)}`;
+      document.getElementById('calTitle').textContent =
+        `${mon.toLocaleDateString('de-DE',{day:'2-digit',month:'short'})} – ${sun.toLocaleDateString('de-DE',{day:'2-digit',month:'short',year:'numeric'})}`;
+    } else {
+      param = `date=${fmtISO(calDate)}`;
+      document.getElementById('calTitle').textContent =
+        calDate.toLocaleDateString('de-DE',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+    }
+
+    const res = await fetch(`${API}/appointments/?${param}`).catch(()=>null);
+    const appts = res?.ok ? await res.json() : [];
+
+    if (calView === 'month') renderMonthView(container, appts, today);
+    else if (calView === 'week') renderWeekView(container, appts, today);
+    else renderDayView(container, appts, today);
+  }
+
+  function renderMonthView(container, appts, today) {
+    const year = calDate.getFullYear(), month = calDate.getMonth();
+    const first = new Date(year, month, 1);
+    const last  = new Date(year, month+1, 0);
+    let startDay = first.getDay(); if (startDay===0) startDay=7; startDay--;
+    const days = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+    const apptMap = {};
+    appts.forEach(a => { (apptMap[a.date] ??= []).push(a); });
+
+    let html = `<div class="grid grid-cols-7 gap-1 mb-1">${days.map(d=>`<div class="text-center text-xs font-semibold text-gray-500 py-1">${d}</div>`).join('')}</div>`;
+    html += `<div class="grid grid-cols-7 gap-1">`;
+    for (let i=0; i<startDay; i++) html += `<div class="cal-day other-month"></div>`;
+    for (let d=1; d<=last.getDate(); d++) {
+      const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const isToday = new Date(year,month,d).getTime()===today.getTime();
+      const dayAppts = apptMap[dateStr] || [];
+      html += `<div class="cal-day${isToday?' today':''}">
+        <div class="text-xs font-semibold ${isToday?'text-blue-700':'text-gray-600'} mb-0.5">${d}</div>
+        ${dayAppts.map(a=>`<div class="cal-appt ${a.status}" title="${a.patient_name} · ${a.reason}">${a.time.slice(0,5)} ${a.patient_name}</div>`).join('')}
+      </div>`;
+    }
+    const remaining = (7 - (startDay + last.getDate()) % 7) % 7;
+    for (let i=0; i<remaining; i++) html += `<div class="cal-day other-month"></div>`;
+    html += `</div>`;
+    container.innerHTML = html;
+  }
+
+  function renderWeekView(container, appts, today) {
+    const mon = getMonday(calDate);
+    const apptMap = {};
+    appts.forEach(a => { (apptMap[a.date] ??= []).push(a); });
+    const days = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+    let html = `<div class="flex gap-2">`;
+    for (let i=0; i<7; i++) {
+      const d = new Date(mon); d.setDate(mon.getDate()+i);
+      const ds = fmtISO(d);
+      const isToday = d.getTime()===today.getTime();
+      const dayAppts = apptMap[ds] || [];
+      html += `<div class="week-col ${isToday?'week-today':''}">
+        <div class="week-header">${days[i]}<br><span class="font-normal">${d.getDate()}.${d.getMonth()+1}.</span></div>
+        <div class="week-body">
+          ${dayAppts.length ? dayAppts.map(a=>`
+            <div class="cal-appt ${a.status} mb-1 w-full" title="${a.patient_name}">
+              ${a.time.slice(0,5)}<br><span class="opacity-80">${a.patient_name}</span>
+            </div>`).join('') : '<div class="text-xs text-gray-300 text-center pt-4">–</div>'}
+        </div>
+      </div>`;
+    }
+    html += `</div>`;
+    container.innerHTML = html;
+  }
+
+  function renderDayView(container, appts, today) {
+    const ds = fmtISO(calDate);
+    const isToday = calDate.getTime()===today.getTime();
+    if (!appts.length) {
+      container.innerHTML = `<div class="text-center text-gray-400 py-10">Keine Termine an diesem Tag.</div>`;
+      return;
+    }
+    container.innerHTML = `<div class="space-y-3">` +
+      appts.map(a => `
+        <div class="flex items-start gap-4 bg-gray-50 rounded-xl px-4 py-3 row-anim">
+          <div class="text-blue-700 font-bold text-lg w-14 shrink-0">${a.time.slice(0,5)}</div>
+          <div class="flex-1">
+            <div class="font-semibold text-gray-800">${a.patient_name}</div>
+            <div class="text-sm text-gray-500">${a.reason}${a.doctor?' · '+a.doctor:''}</div>
+          </div>
+          <span class="status-${a.status} text-xs px-2 py-0.5 rounded-full font-medium shrink-0">${statusLabel(a.status)}</span>
+        </div>`).join('') + `</div>`;
+  }
+
+  // ══════════════════════════════════════════════════════
+  // Patients
+  // ══════════════════════════════════════════════════════
+  function renderPatientTable(patients) {
+    const tbody = document.getElementById('patientTableBody');
+    document.getElementById('patientCount').textContent = `${patients.length} Patient${patients.length!==1?'en':''}`;
+    if (!patients.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">Keine Patienten gefunden.</td></tr>';
+      return;
+    }
+    const gL = {M:'Männlich',F:'Weiblich',D:'Divers'};
+    tbody.innerHTML = patients.map((p,i) => `
+      <tr class="row-anim hover:bg-gray-50 cursor-pointer" style="animation-delay:${i*.04}s" onclick="loadPatientDetail(${p.id})">
+        <td class="px-4 py-2.5 font-medium text-gray-800">${p.last_name}, ${p.first_name}</td>
+        <td class="px-4 py-2.5 text-gray-600">${formatDate(p.date_of_birth)}</td>
+        <td class="px-4 py-2.5 text-gray-600">${gL[p.gender]??p.gender}</td>
+        <td class="px-4 py-2.5 text-gray-600">${p.phone||'–'}</td>
+        <td class="px-4 py-2.5 text-gray-600">${p.insurance_provider||'–'}</td>
+        <td class="px-4 py-2.5">
+          <button class="text-blue-600 hover:underline text-xs" onclick="event.stopPropagation();openApptFor(${p.id})">+ Termin</button>
+        </td>
+      </tr>`).join('');
+  }
+
+  function filterPatients() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    renderPatientTable(allPatients.filter(p => `${p.first_name} ${p.last_name}`.toLowerCase().includes(q)));
+  }
+
+  async function loadPatientDetail(id) {
+    const res = await fetch(`${API}/patients/${id}/`);
+    const p = await res.json();
+    const gL = {M:'Männlich',F:'Weiblich',D:'Divers'};
+    document.getElementById('detailName').textContent = `${p.last_name}, ${p.first_name}`;
+    document.getElementById('detailInfo').innerHTML = `
+      <div><span class="text-gray-500 text-xs">Geburtsdatum</span><div class="font-medium">${formatDate(p.date_of_birth)}</div></div>
+      <div><span class="text-gray-500 text-xs">Geschlecht</span><div class="font-medium">${gL[p.gender]??p.gender}</div></div>
+      <div><span class="text-gray-500 text-xs">Telefon</span><div class="font-medium">${p.phone||'–'}</div></div>
+      <div><span class="text-gray-500 text-xs">E-Mail</span><div class="font-medium">${p.email||'–'}</div></div>
+      <div><span class="text-gray-500 text-xs">Versicherungsnummer</span><div class="font-medium">${p.insurance_number||'–'}</div></div>
+      <div><span class="text-gray-500 text-xs">Krankenkasse</span><div class="font-medium">${p.insurance_provider||'–'}</div></div>
+      <div class="col-span-2"><span class="text-gray-500 text-xs">Adresse</span><div class="font-medium">${p.address||'–'}</div></div>`;
+    const ab = document.getElementById('detailAppointments');
+    ab.innerHTML = !p.appointments.length
+      ? '<tr><td colspan="5" class="px-3 py-4 text-center text-gray-400">Keine Termine.</td></tr>'
+      : p.appointments.map(a=>`
+          <tr class="hover:bg-gray-50">
+            <td class="px-3 py-2">${formatDate(a.date)}</td>
+            <td class="px-3 py-2">${a.time.slice(0,5)}</td>
+            <td class="px-3 py-2">${a.reason}</td>
+            <td class="px-3 py-2">${a.doctor||'–'}</td>
+            <td class="px-3 py-2"><span class="status-${a.status} text-xs px-2 py-0.5 rounded-full font-medium">${statusLabel(a.status)}</span></td>
+          </tr>`).join('');
+    const det = document.getElementById('patientDetail');
+    det.classList.remove('hidden','anim-detail'); void det.offsetWidth; det.classList.add('anim-detail');
+    det.scrollIntoView({behavior:'smooth'});
+  }
+
+  function closeDetail() { document.getElementById('patientDetail').classList.add('hidden'); }
+  function openApptFor(id) { showPage('new-appointment'); document.getElementById('appointmentPatientSelect').value = id; }
+
+  // ══════════════════════════════════════════════════════
+  // Stations & Beds
+  // ══════════════════════════════════════════════════════
+  async function renderStations() {
+    const res = await fetch(`${API}/stations/`).catch(()=>null);
+    const stations = res?.ok ? await res.json() : [];
+    allStations = stations;
+    const el = document.getElementById('stationsList');
+    if (!stations.length) {
+      el.innerHTML = '<div class="text-gray-400 text-sm">Noch keine Stationen angelegt.</div>'; return;
+    }
+
+    const bedsRes = await fetch(`${API}/beds/`).catch(()=>null);
+    const allBeds = bedsRes?.ok ? await bedsRes.json() : [];
+    const bedsByStation = {};
+    allBeds.forEach(b => { (bedsByStation[b.station] ??= []).push(b); });
+
+    const statusColors = {free:'bed-free', occupied:'bed-occupied', reserved:'bed-reserved', maintenance:'bed-maintenance'};
+    const statusIcons  = {free:'🟢', occupied:'🔴', reserved:'🟡', maintenance:'⚫'};
+    const statusDE     = {free:'Frei', occupied:'Belegt', reserved:'Reserviert', maintenance:'Außer Betrieb'};
+
+    el.innerHTML = stations.map((s,si) => {
+      const beds = bedsByStation[s.id] || [];
+      const occupancy = s.total_beds > 0 ? Math.round((s.occupied_beds/s.total_beds)*100) : 0;
+      return `
+        <div class="bg-white rounded-xl shadow p-5 anim-panel" style="animation-delay:${si*.07}s">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h2 class="text-base font-bold text-gray-800">${s.name}</h2>
+              <div class="text-xs text-gray-500">Etage ${s.floor}${s.description?' · '+s.description:''}</div>
+            </div>
+            <div class="flex gap-3 text-sm">
+              <span class="bg-green-50 text-green-700 px-2 py-0.5 rounded-full font-medium">🟢 ${s.free_beds} frei</span>
+              <span class="bg-red-50 text-red-700 px-2 py-0.5 rounded-full font-medium">🔴 ${s.occupied_beds} belegt</span>
+              <span class="text-gray-500">${s.total_beds} gesamt</span>
+            </div>
+          </div>
+          <!-- Occupancy bar -->
+          <div class="w-full bg-gray-100 rounded-full h-2 mb-4">
+            <div class="h-2 rounded-full transition-all duration-700 ${occupancy>80?'bg-red-500':occupancy>50?'bg-orange-400':'bg-green-500'}"
+              style="width:${occupancy}%"></div>
+          </div>
+          <!-- Bed grid -->
+          ${beds.length ? `
+            <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+              ${beds.map(b=>`
+                <div class="bed-card ${statusColors[b.status]}" title="${b.patient_name?'Patient: '+b.patient_name:''}">
+                  <div class="text-xs font-bold mb-0.5">${statusIcons[b.status]} Bett ${b.bed_number}</div>
+                  ${b.room?`<div class="text-xs opacity-70">${b.room}</div>`:''}
+                  <div class="text-xs font-medium mt-1">${statusDE[b.status]}</div>
+                  ${b.patient_name?`<div class="text-xs opacity-80 truncate">${b.patient_name}</div>`:''}
+                </div>`).join('')}
+            </div>` : '<div class="text-sm text-gray-400">Noch keine Betten in dieser Station.</div>'}
+        </div>`;
+    }).join('');
+  }
+
+  // ══════════════════════════════════════════════════════
+  // Form submissions
+  // ══════════════════════════════════════════════════════
+  async function submitPatient(e) {
+    e.preventDefault();
+    const form = e.target, btn = form.querySelector('button[type="submit"]');
+    const msg = document.getElementById('patientFormMsg');
+    setLoading(btn, true, 'Patientenakte anlegen');
+    try {
+      const res = await fetch(`${API}/patients/`, { method:'POST',
+        headers:{'Content-Type':'application/json'}, body:JSON.stringify(Object.fromEntries(new FormData(form))) });
+      if (res.ok) {
+        showMsg(msg, '✓ Patientenakte erfolgreich angelegt.', true);
+        form.reset();
+        const fresh = await fetch(`${API}/patients/`); allPatients = await fresh.json();
+      } else { showMsg(msg, 'Fehler: ' + JSON.stringify(await res.json()), false); }
+    } catch { showMsg(msg, 'Serververbindung fehlgeschlagen.', false); }
+    finally { setLoading(btn, false, 'Patientenakte anlegen'); }
+  }
+
+  async function submitAppointment(e) {
+    e.preventDefault();
+    const form = e.target, btn = form.querySelector('button[type="submit"]');
+    const msg = document.getElementById('appointmentFormMsg');
+    setLoading(btn, true, 'Termin speichern');
+    try {
+      const res = await fetch(`${API}/appointments/`, { method:'POST',
+        headers:{'Content-Type':'application/json'}, body:JSON.stringify(Object.fromEntries(new FormData(form))) });
+      if (res.ok) { showMsg(msg, '✓ Termin erfolgreich gespeichert.', true); form.reset(); }
+      else { showMsg(msg, 'Fehler: ' + JSON.stringify(await res.json()), false); }
+    } catch { showMsg(msg, 'Serververbindung fehlgeschlagen.', false); }
+    finally { setLoading(btn, false, 'Termin speichern'); }
+  }
+
+  async function submitStation(e) {
+    e.preventDefault();
+    const form = e.target, btn = form.querySelector('button[type="submit"]');
+    const msg = document.getElementById('stationFormMsg');
+    setLoading(btn, true, 'Station anlegen');
+    try {
+      const res = await fetch(`${API}/stations/`, { method:'POST',
+        headers:{'Content-Type':'application/json'}, body:JSON.stringify(Object.fromEntries(new FormData(form))) });
+      if (res.ok) {
+        showMsg(msg, '✓ Station erfolgreich angelegt.', true);
+        form.reset();
+        const fresh = await fetch(`${API}/stations/`); allStations = await fresh.json();
+        populateSelect('bedStationSelect', allStations, 'name');
+      } else { showMsg(msg, 'Fehler: ' + JSON.stringify(await res.json()), false); }
+    } catch { showMsg(msg, 'Serververbindung fehlgeschlagen.', false); }
+    finally { setLoading(btn, false, 'Station anlegen'); }
+  }
+
+  async function submitBed(e) {
+    e.preventDefault();
+    const form = e.target, btn = form.querySelector('button[type="submit"]');
+    const msg = document.getElementById('bedFormMsg');
+    const data = Object.fromEntries(new FormData(form));
+    if (!data.patient) delete data.patient;
+    setLoading(btn, true, 'Bett hinzufügen');
+    try {
+      const res = await fetch(`${API}/beds/`, { method:'POST',
+        headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+      if (res.ok) {
+        showMsg(msg, '✓ Bett erfolgreich hinzugefügt.', true);
+        form.reset();
+        const fresh = await fetch(`${API}/stations/`); allStations = await fresh.json();
+      } else { showMsg(msg, 'Fehler: ' + JSON.stringify(await res.json()), false); }
+    } catch { showMsg(msg, 'Serververbindung fehlgeschlagen.', false); }
+    finally { setLoading(btn, false, 'Bett hinzufügen'); }
+  }
+
+  // ══════════════════════════════════════════════════════
+  // Helpers
+  // ══════════════════════════════════════════════════════
+  function populateSelect(id, items, labelField) {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const cur = sel.value;
+    if (labelField) {
+      sel.innerHTML = '<option value="">– auswählen –</option>' +
+        items.map(i=>`<option value="${i.id}">${i[labelField]}</option>`).join('');
+    } else {
+      sel.innerHTML = '<option value="">– Patient auswählen –</option>' +
+        items.map(p=>`<option value="${p.id}">${p.last_name}, ${p.first_name}</option>`).join('');
+    }
+    if (cur) sel.value = cur;
+  }
+
+  function formatDate(d) {
+    if (!d) return '–';
+    const [y,m,day] = d.split('-');
+    return `${day}.${m}.${y}`;
+  }
+
+  function statusLabel(s) {
+    return {scheduled:'Geplant', completed:'Abgeschlossen', cancelled:'Abgesagt'}[s] ?? s;
+  }
+
+  function showMsg(el, text, ok) {
+    el.textContent = text;
+    el.className = `msg-anim text-sm rounded px-3 py-2 border ${ok?'bg-green-50 text-green-700 border-green-200':'bg-red-50 text-red-700 border-red-200'}`;
+    el.classList.remove('hidden');
+    setTimeout(()=>el.classList.add('hidden'), 4000);
+  }
+
+  function setLoading(btn, loading, label) {
+    btn.disabled = loading;
+    btn.innerHTML = loading ? `<span class="spinner"></span>Speichern…` : label;
+  }
+
+  function getMonday(d) {
+    const dt = new Date(d); const day = dt.getDay(); const diff = (day===0?-6:1-day);
+    dt.setDate(dt.getDate()+diff); dt.setHours(0,0,0,0); return dt;
+  }
+
+  function getISOWeek(d) {
+    const mon = getMonday(d);
+    return `${mon.getFullYear()}-W${String(getWeekNumber(d)).padStart(2,'0')}`;
+  }
+
+  function getWeekNumber(d) {
+    const dt = new Date(d); dt.setHours(0,0,0,0);
+    dt.setDate(dt.getDate()+4-(dt.getDay()||7));
+    const y = new Date(dt.getFullYear(),0,1);
+    return Math.ceil((((dt-y)/86400000)+1)/7);
+  }
+
+  function fmtISO(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  bootLoad();
+</script>
+</body>
+</html>
