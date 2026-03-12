@@ -120,6 +120,41 @@
     <div class="nav-item" id="nav-new-station" onclick="showPage('new-station')">
       <span>➕</span> Neue Station
     </div>
+
+    <div class="nav-section">Klinisch</div>
+    <div class="nav-item" id="nav-clinical" onclick="showPage('clinical')">
+      <span>🗂</span> Klinische Akte
+    </div>
+    <div class="nav-item" id="nav-new-admission" onclick="showPage('new-admission')">
+      <span>🛏</span> Aufnahme
+    </div>
+    <div class="nav-item" id="nav-new-diagnosis" onclick="showPage('new-diagnosis')">
+      <span>🔬</span> Diagnose
+    </div>
+    <div class="nav-item" id="nav-new-prescription" onclick="showPage('new-prescription')">
+      <span>💊</span> Medikament
+    </div>
+    <div class="nav-item" id="nav-new-lab" onclick="showPage('new-lab')">
+      <span>🧪</span> Laborbefund
+    </div>
+    <div class="nav-item" id="nav-new-vitals" onclick="showPage('new-vitals')">
+      <span>❤️</span> Vitalzeichen
+    </div>
+    <div class="nav-item" id="nav-new-history" onclick="showPage('new-history')">
+      <span>📖</span> Anamnese
+    </div>
+    <div class="nav-item" id="nav-new-note" onclick="showPage('new-note')">
+      <span>📝</span> Klinische Notiz
+    </div>
+    <div class="nav-item" id="nav-new-procedure" onclick="showPage('new-procedure')">
+      <span>⚕️</span> Prozedur
+    </div>
+    <div class="nav-item" id="nav-new-referral" onclick="showPage('new-referral')">
+      <span>🔀</span> Überweisung
+    </div>
+    <div class="nav-item" id="nav-new-discharge" onclick="showPage('new-discharge')">
+      <span>📄</span> Entlassbrief
+    </div>
   </aside>
 
   <!-- ═══ Main ═══ -->
@@ -347,6 +382,300 @@
       </div>
     </div>
 
+    <!-- ══════════════════════════════════════════════════════
+         KLINISCHE AKTE – tabbed summary per patient
+    ══════════════════════════════════════════════════════ -->
+    <div id="page-clinical" class="hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <h1 class="text-xl font-bold text-gray-800">Klinische Akte</h1>
+        <select id="clinicalPatientSelect" class="form-input w-64" onchange="loadClinicalSummary(this.value)">
+          <option value="">– Patient auswählen –</option>
+        </select>
+      </div>
+      <!-- Tabs -->
+      <div id="clinicalTabs" class="hidden">
+        <div class="flex gap-1 flex-wrap border-b border-gray-200 mb-4" id="clinicalTabBtns"></div>
+        <div id="clinicalTabContent"></div>
+      </div>
+      <div id="clinicalEmpty" class="text-gray-400 text-sm">Bitte einen Patienten auswählen.</div>
+    </div>
+
+    <!-- ── Neue Aufnahme ── -->
+    <div id="page-new-admission" class="hidden">
+      <h1 class="text-xl font-bold text-gray-800 mb-5">Aufnahme erfassen</h1>
+      <div class="bg-white rounded-xl shadow p-5 max-w-2xl anim-panel">
+        <form id="admissionForm" onsubmit="submitClinical(event,'admissions','admissionForm','Aufnahme speichern')" class="space-y-4">
+          <div><label class="form-label">Patient *</label><select name="patient" class="form-input clin-patient-sel" required><option value="">– wählen –</option></select></div>
+          <div><label class="form-label">Bett (optional)</label><select name="bed" class="form-input" id="admBedSel"><option value="">– kein Bett –</option></select></div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">Aufnahmedatum *</label><input name="admission_date" type="date" required class="form-input"/></div>
+            <div><label class="form-label">Entlassungsdatum</label><input name="discharge_date" type="date" class="form-input"/></div>
+          </div>
+          <div><label class="form-label">Entlassungsart</label>
+            <select name="discharge_type" class="form-input">
+              <option value="">–</option><option value="home">Nach Hause</option>
+              <option value="transfer">Verlegung</option><option value="deceased">Verstorben</option><option value="other">Sonstiges</option>
+            </select>
+          </div>
+          <div><label class="form-label">Aufnahmegrund *</label><input name="reason" required class="form-input"/></div>
+          <div><label class="form-label">Notizen</label><textarea name="notes" rows="2" class="form-input"></textarea></div>
+          <div id="admissionFormMsg" class="hidden text-sm rounded px-3 py-2"></div>
+          <button type="submit" class="btn-primary">Aufnahme speichern</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── Neue Diagnose ── -->
+    <div id="page-new-diagnosis" class="hidden">
+      <h1 class="text-xl font-bold text-gray-800 mb-5">Diagnose erfassen</h1>
+      <div class="bg-white rounded-xl shadow p-5 max-w-2xl anim-panel">
+        <form id="diagnosisForm" onsubmit="submitClinical(event,'diagnoses','diagnosisForm','Diagnose speichern')" class="space-y-4">
+          <div><label class="form-label">Patient *</label><select name="patient" class="form-input clin-patient-sel" required><option value="">– wählen –</option></select></div>
+          <div><label class="form-label">Aufnahme (optional)</label><select name="admission" class="form-input clin-admission-sel"><option value="">–</option></select></div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">ICD-10 Code *</label><input name="icd_code" required class="form-input" placeholder="z. B. E11.9"/></div>
+            <div><label class="form-label">Datum *</label><input name="date" type="date" required class="form-input"/></div>
+          </div>
+          <div><label class="form-label">Beschreibung *</label><input name="description" required class="form-input" placeholder="z. B. Diabetes mellitus Typ 2"/></div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">Typ</label>
+              <select name="type" class="form-input"><option value="primary">Hauptdiagnose</option><option value="secondary">Nebendiagnose</option><option value="admission">Aufnahmediagnose</option></select>
+            </div>
+            <div><label class="form-label">Status</label>
+              <select name="status" class="form-input"><option value="active">Aktiv</option><option value="resolved">Abgeklungen</option><option value="chronic">Chronisch</option></select>
+            </div>
+          </div>
+          <div><label class="form-label">Arzt</label><input name="doctor" class="form-input"/></div>
+          <div><label class="form-label">Notizen</label><textarea name="notes" rows="2" class="form-input"></textarea></div>
+          <div id="diagnosisFormMsg" class="hidden text-sm rounded px-3 py-2"></div>
+          <button type="submit" class="btn-primary">Diagnose speichern</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── Neues Medikament ── -->
+    <div id="page-new-prescription" class="hidden">
+      <h1 class="text-xl font-bold text-gray-800 mb-5">Medikament / Verordnung</h1>
+      <div class="bg-white rounded-xl shadow p-5 max-w-2xl anim-panel">
+        <form id="prescriptionForm" onsubmit="submitClinical(event,'prescriptions','prescriptionForm','Medikament speichern')" class="space-y-4">
+          <div><label class="form-label">Patient *</label><select name="patient" class="form-input clin-patient-sel" required><option value="">– wählen –</option></select></div>
+          <div><label class="form-label">Aufnahme (optional)</label><select name="admission" class="form-input clin-admission-sel"><option value="">–</option></select></div>
+          <div><label class="form-label">Medikament *</label><input name="drug_name" required class="form-input" placeholder="z. B. Metformin"/></div>
+          <div class="grid grid-cols-3 gap-4">
+            <div><label class="form-label">Dosierung *</label><input name="dosage" required class="form-input" placeholder="500"/></div>
+            <div><label class="form-label">Einheit *</label><input name="unit" required class="form-input" placeholder="mg"/></div>
+            <div><label class="form-label">Häufigkeit *</label><input name="frequency" required class="form-input" placeholder="2×/Tag"/></div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">Verabreichung</label>
+              <select name="route" class="form-input"><option value="oral">Oral</option><option value="iv">Intravenös</option><option value="im">Intramuskulär</option><option value="topical">Topisch</option><option value="inhaled">Inhalativ</option><option value="other">Sonstiges</option></select>
+            </div>
+            <div><label class="form-label">Status</label>
+              <select name="status" class="form-input"><option value="active">Aktiv</option><option value="discontinued">Abgesetzt</option><option value="completed">Abgeschlossen</option></select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">Startdatum *</label><input name="start_date" type="date" required class="form-input"/></div>
+            <div><label class="form-label">Enddatum</label><input name="end_date" type="date" class="form-input"/></div>
+          </div>
+          <div><label class="form-label">Arzt</label><input name="doctor" class="form-input"/></div>
+          <div><label class="form-label">Notizen</label><textarea name="notes" rows="2" class="form-input"></textarea></div>
+          <div id="prescriptionFormMsg" class="hidden text-sm rounded px-3 py-2"></div>
+          <button type="submit" class="btn-primary">Medikament speichern</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── Neuer Laborbefund ── -->
+    <div id="page-new-lab" class="hidden">
+      <h1 class="text-xl font-bold text-gray-800 mb-5">Laborbefund erfassen</h1>
+      <div class="bg-white rounded-xl shadow p-5 max-w-2xl anim-panel">
+        <form id="labForm" onsubmit="submitClinical(event,'lab-results','labForm','Befund speichern')" class="space-y-4">
+          <div><label class="form-label">Patient *</label><select name="patient" class="form-input clin-patient-sel" required><option value="">– wählen –</option></select></div>
+          <div><label class="form-label">Aufnahme (optional)</label><select name="admission" class="form-input clin-admission-sel"><option value="">–</option></select></div>
+          <div><label class="form-label">Test *</label><input name="test_name" required class="form-input" placeholder="z. B. HbA1c"/></div>
+          <div class="grid grid-cols-3 gap-4">
+            <div><label class="form-label">Wert *</label><input name="value" required class="form-input" placeholder="7.2"/></div>
+            <div><label class="form-label">Einheit</label><input name="unit" class="form-input" placeholder="% oder mmol/L"/></div>
+            <div><label class="form-label">Referenzbereich</label><input name="reference_range" class="form-input" placeholder="< 6.5%"/></div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">Status</label>
+              <select name="status" class="form-input"><option value="normal">Normal</option><option value="elevated">Erhöht</option><option value="low">Erniedrigt</option><option value="critical">Kritisch</option></select>
+            </div>
+            <div><label class="form-label">Entnahmedatum *</label><input name="sample_date" type="date" required class="form-input"/></div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">Ergebnisdatum</label><input name="result_date" type="date" class="form-input"/></div>
+            <div><label class="form-label">Anfordernder Arzt</label><input name="ordering_doctor" class="form-input"/></div>
+          </div>
+          <div><label class="form-label">Notizen</label><textarea name="notes" rows="2" class="form-input"></textarea></div>
+          <div id="labFormMsg" class="hidden text-sm rounded px-3 py-2"></div>
+          <button type="submit" class="btn-primary">Befund speichern</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── Neue Vitalzeichen ── -->
+    <div id="page-new-vitals" class="hidden">
+      <h1 class="text-xl font-bold text-gray-800 mb-5">Vitalzeichen erfassen</h1>
+      <div class="bg-white rounded-xl shadow p-5 max-w-2xl anim-panel">
+        <form id="vitalsForm" onsubmit="submitClinical(event,'vitals','vitalsForm','Vitalzeichen speichern')" class="space-y-4">
+          <div><label class="form-label">Patient *</label><select name="patient" class="form-input clin-patient-sel" required><option value="">– wählen –</option></select></div>
+          <div><label class="form-label">Aufnahme (optional)</label><select name="admission" class="form-input clin-admission-sel"><option value="">–</option></select></div>
+          <div><label class="form-label">Zeitpunkt *</label><input name="timestamp" type="datetime-local" required class="form-input"/></div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">Blutdruck systolisch (mmHg)</label><input name="systolic_bp" type="number" class="form-input" placeholder="120"/></div>
+            <div><label class="form-label">Blutdruck diastolisch (mmHg)</label><input name="diastolic_bp" type="number" class="form-input" placeholder="80"/></div>
+          </div>
+          <div class="grid grid-cols-3 gap-4">
+            <div><label class="form-label">Herzfrequenz (bpm)</label><input name="heart_rate" type="number" class="form-input" placeholder="72"/></div>
+            <div><label class="form-label">Temperatur (°C)</label><input name="temperature" type="number" step="0.1" class="form-input" placeholder="36.6"/></div>
+            <div><label class="form-label">O₂-Sättigung (%)</label><input name="oxygen_sat" type="number" step="0.1" class="form-input" placeholder="98"/></div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">Gewicht (kg)</label><input name="weight" type="number" step="0.1" class="form-input" placeholder="75.0"/></div>
+            <div><label class="form-label">Größe (cm)</label><input name="height" type="number" step="0.1" class="form-input" placeholder="175"/></div>
+          </div>
+          <div><label class="form-label">Gemessen von</label><input name="measured_by" class="form-input"/></div>
+          <div id="vitalsFormMsg" class="hidden text-sm rounded px-3 py-2"></div>
+          <button type="submit" class="btn-primary">Vitalzeichen speichern</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── Anamnese ── -->
+    <div id="page-new-history" class="hidden">
+      <h1 class="text-xl font-bold text-gray-800 mb-5">Anamnese erfassen</h1>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 max-w-5xl">
+        <!-- Allergie -->
+        <div class="bg-white rounded-xl shadow p-5 anim-panel">
+          <h2 class="font-semibold text-gray-700 mb-4">Allergie</h2>
+          <form id="allergyForm" onsubmit="submitClinical(event,'allergies','allergyForm','Allergie speichern')" class="space-y-3">
+            <div><label class="form-label">Patient *</label><select name="patient" class="form-input clin-patient-sel" required><option value="">– wählen –</option></select></div>
+            <div><label class="form-label">Substanz *</label><input name="substance" required class="form-input" placeholder="z. B. Penicillin"/></div>
+            <div><label class="form-label">Reaktion</label><input name="reaction" class="form-input" placeholder="z. B. Hautausschlag"/></div>
+            <div><label class="form-label">Schweregrad</label>
+              <select name="severity" class="form-input"><option value="mild">Mild</option><option value="moderate">Mittel</option><option value="severe">Schwer</option></select>
+            </div>
+            <div><label class="form-label">Datum *</label><input name="noted_at" type="date" required class="form-input"/></div>
+            <div id="allergyFormMsg" class="hidden text-sm rounded px-3 py-2"></div>
+            <button type="submit" class="btn-primary w-full">Allergie speichern</button>
+          </form>
+        </div>
+        <!-- Vorerkrankung -->
+        <div class="bg-white rounded-xl shadow p-5 anim-panel" style="animation-delay:.07s">
+          <h2 class="font-semibold text-gray-700 mb-4">Vorerkrankung</h2>
+          <form id="conditionForm" onsubmit="submitClinical(event,'conditions','conditionForm','Vorerkrankung speichern')" class="space-y-3">
+            <div><label class="form-label">Patient *</label><select name="patient" class="form-input clin-patient-sel" required><option value="">– wählen –</option></select></div>
+            <div><label class="form-label">Erkrankung *</label><input name="name" required class="form-input" placeholder="z. B. Arterielle Hypertonie"/></div>
+            <div><label class="form-label">ICD-10 Code</label><input name="icd_code" class="form-input" placeholder="z. B. I10"/></div>
+            <div><label class="form-label">Seit</label><input name="since" type="date" class="form-input"/></div>
+            <div><label class="form-label">Notizen</label><textarea name="notes" rows="2" class="form-input"></textarea></div>
+            <div id="conditionFormMsg" class="hidden text-sm rounded px-3 py-2"></div>
+            <button type="submit" class="btn-primary w-full">Vorerkrankung speichern</button>
+          </form>
+        </div>
+        <!-- Operation -->
+        <div class="bg-white rounded-xl shadow p-5 anim-panel" style="animation-delay:.14s">
+          <h2 class="font-semibold text-gray-700 mb-4">Operation / Eingriff</h2>
+          <form id="surgeryForm" onsubmit="submitClinical(event,'surgeries','surgeryForm','Operation speichern')" class="space-y-3">
+            <div><label class="form-label">Patient *</label><select name="patient" class="form-input clin-patient-sel" required><option value="">– wählen –</option></select></div>
+            <div><label class="form-label">Eingriff *</label><input name="procedure" required class="form-input" placeholder="z. B. Appendektomie"/></div>
+            <div><label class="form-label">OPS-Code</label><input name="ops_code" class="form-input" placeholder="z. B. 5-470"/></div>
+            <div><label class="form-label">Datum *</label><input name="date" type="date" required class="form-input"/></div>
+            <div><label class="form-label">Krankenhaus</label><input name="hospital" class="form-input"/></div>
+            <div><label class="form-label">Chirurg</label><input name="surgeon" class="form-input"/></div>
+            <div><label class="form-label">Notizen</label><textarea name="notes" rows="2" class="form-input"></textarea></div>
+            <div id="surgeryFormMsg" class="hidden text-sm rounded px-3 py-2"></div>
+            <button type="submit" class="btn-primary w-full">Operation speichern</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Klinische Notiz ── -->
+    <div id="page-new-note" class="hidden">
+      <h1 class="text-xl font-bold text-gray-800 mb-5">Klinische Notiz</h1>
+      <div class="bg-white rounded-xl shadow p-5 max-w-2xl anim-panel">
+        <form id="noteForm" onsubmit="submitClinical(event,'notes','noteForm','Notiz speichern')" class="space-y-4">
+          <div><label class="form-label">Patient *</label><select name="patient" class="form-input clin-patient-sel" required><option value="">– wählen –</option></select></div>
+          <div><label class="form-label">Aufnahme (optional)</label><select name="admission" class="form-input clin-admission-sel"><option value="">–</option></select></div>
+          <div><label class="form-label">Notiztyp</label>
+            <select name="note_type" class="form-input"><option value="followup">Verlaufsdokumentation</option><option value="initial">Erstuntersuchung</option><option value="discharge">Entlassungsnotiz</option><option value="consultation">Konsil</option><option value="other">Sonstiges</option></select>
+          </div>
+          <div><label class="form-label">Autor *</label><input name="author" required class="form-input" placeholder="z. B. Dr. Müller"/></div>
+          <div><label class="form-label">Inhalt *</label><textarea name="content" required rows="6" class="form-input" placeholder="Klinische Beobachtungen, Befunde, Maßnahmen…"></textarea></div>
+          <div id="noteFormMsg" class="hidden text-sm rounded px-3 py-2"></div>
+          <button type="submit" class="btn-primary">Notiz speichern</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── Neue Prozedur ── -->
+    <div id="page-new-procedure" class="hidden">
+      <h1 class="text-xl font-bold text-gray-800 mb-5">Prozedur / Behandlung</h1>
+      <div class="bg-white rounded-xl shadow p-5 max-w-2xl anim-panel">
+        <form id="procedureForm" onsubmit="submitClinical(event,'procedures','procedureForm','Prozedur speichern')" class="space-y-4">
+          <div><label class="form-label">Patient *</label><select name="patient" class="form-input clin-patient-sel" required><option value="">– wählen –</option></select></div>
+          <div><label class="form-label">Aufnahme (optional)</label><select name="admission" class="form-input clin-admission-sel"><option value="">–</option></select></div>
+          <div><label class="form-label">Bezeichnung *</label><input name="name" required class="form-input" placeholder="z. B. EKG, Sonographie Abdomen"/></div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">OPS-Code</label><input name="ops_code" class="form-input" placeholder="z. B. 1-266"/></div>
+            <div><label class="form-label">Datum *</label><input name="date" type="date" required class="form-input"/></div>
+          </div>
+          <div><label class="form-label">Arzt</label><input name="doctor" class="form-input"/></div>
+          <div><label class="form-label">Notizen</label><textarea name="notes" rows="2" class="form-input"></textarea></div>
+          <div id="procedureFormMsg" class="hidden text-sm rounded px-3 py-2"></div>
+          <button type="submit" class="btn-primary">Prozedur speichern</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── Überweisung ── -->
+    <div id="page-new-referral" class="hidden">
+      <h1 class="text-xl font-bold text-gray-800 mb-5">Überweisung / Konsil</h1>
+      <div class="bg-white rounded-xl shadow p-5 max-w-2xl anim-panel">
+        <form id="referralForm" onsubmit="submitClinical(event,'referrals','referralForm','Überweisung speichern')" class="space-y-4">
+          <div><label class="form-label">Patient *</label><select name="patient" class="form-input clin-patient-sel" required><option value="">– wählen –</option></select></div>
+          <div><label class="form-label">Aufnahme (optional)</label><select name="admission" class="form-input clin-admission-sel"><option value="">–</option></select></div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">Überweisender Arzt *</label><input name="referring_doctor" required class="form-input"/></div>
+            <div><label class="form-label">Spezialist *</label><input name="specialist" required class="form-input" placeholder="z. B. Dr. Schmidt"/></div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">Fachrichtung</label><input name="specialty" class="form-input" placeholder="z. B. Kardiologie"/></div>
+            <div><label class="form-label">Datum *</label><input name="date" type="date" required class="form-input"/></div>
+          </div>
+          <div><label class="form-label">Grund *</label><input name="reason" required class="form-input"/></div>
+          <div><label class="form-label">Status</label>
+            <select name="status" class="form-input"><option value="pending">Ausstehend</option><option value="completed">Abgeschlossen</option><option value="cancelled">Abgesagt</option></select>
+          </div>
+          <div><label class="form-label">Ergebnisnotizen</label><textarea name="result_notes" rows="2" class="form-input"></textarea></div>
+          <div id="referralFormMsg" class="hidden text-sm rounded px-3 py-2"></div>
+          <button type="submit" class="btn-primary">Überweisung speichern</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── Entlassbrief ── -->
+    <div id="page-new-discharge" class="hidden">
+      <h1 class="text-xl font-bold text-gray-800 mb-5">Entlassbrief erstellen</h1>
+      <div class="bg-white rounded-xl shadow p-5 max-w-2xl anim-panel">
+        <form id="dischargeForm" onsubmit="submitClinical(event,'discharge-letters','dischargeForm','Entlassbrief speichern')" class="space-y-4">
+          <div><label class="form-label">Patient *</label><select name="patient" class="form-input clin-patient-sel" required><option value="">– wählen –</option></select></div>
+          <div><label class="form-label">Aufnahme *</label><select name="admission" class="form-input clin-admission-sel" required><option value="">– wählen –</option></select></div>
+          <div><label class="form-label">Diagnosezusammenfassung *</label><textarea name="diagnosis_summary" required rows="3" class="form-input"></textarea></div>
+          <div><label class="form-label">Behandlungszusammenfassung *</label><textarea name="treatment_summary" required rows="3" class="form-input"></textarea></div>
+          <div><label class="form-label">Entlassmedikation</label><textarea name="medication_on_discharge" rows="2" class="form-input" placeholder="Medikamente bei Entlassung…"></textarea></div>
+          <div><label class="form-label">Nachsorgeempfehlungen</label><textarea name="followup_instructions" rows="2" class="form-input"></textarea></div>
+          <div><label class="form-label">Autor *</label><input name="author" required class="form-input"/></div>
+          <div id="dischargeFormMsg" class="hidden text-sm rounded px-3 py-2"></div>
+          <button type="submit" class="btn-primary">Entlassbrief speichern</button>
+        </form>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -372,10 +701,14 @@
   // ══════════════════════════════════════════════════════
   // Navigation
   // ══════════════════════════════════════════════════════
-  const PAGES = ['dashboard','calendar','patients','new-patient','new-appointment','stations','new-station'];
+  const CLIN_API = 'http://127.0.0.1:8000/api/clinical';
+  const PAGES = ['dashboard','calendar','patients','new-patient','new-appointment','stations','new-station',
+    'clinical','new-admission','new-diagnosis','new-prescription','new-lab','new-vitals',
+    'new-history','new-note','new-procedure','new-referral','new-discharge'];
+
   function showPage(name) {
     PAGES.forEach(p => {
-      document.getElementById(`page-${p}`).classList.add('hidden');
+      document.getElementById(`page-${p}`)?.classList.add('hidden');
       document.getElementById(`nav-${p}`)?.classList.remove('active');
     });
     const panel = document.getElementById(`page-${name}`);
@@ -390,6 +723,10 @@
     if (name === 'stations')         renderStations();
     if (name === 'new-appointment')  populateSelect('appointmentPatientSelect', allPatients);
     if (name === 'new-station')      { populateSelect('bedStationSelect', allStations, 'name'); populateSelect('bedPatientSelect', allPatients); }
+    if (name === 'clinical')         { populateSelect('clinicalPatientSelect', allPatients); }
+    if (PAGES.includes(name) && name.startsWith('new-') && name !== 'new-patient' && name !== 'new-appointment' && name !== 'new-station') {
+      populateClinicalSelects();
+    }
   }
 
   // ══════════════════════════════════════════════════════
@@ -815,6 +1152,201 @@
 
   function fmtISO(d) {
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  // ══════════════════════════════════════════════════════
+  // Clinical – populate patient + admission selects
+  // ══════════════════════════════════════════════════════
+  async function populateClinicalSelects() {
+    // Patient dropdowns
+    document.querySelectorAll('.clin-patient-sel').forEach(sel => {
+      const cur = sel.value;
+      sel.innerHTML = '<option value="">– Patient wählen –</option>' +
+        allPatients.map(p=>`<option value="${p.id}">${p.last_name}, ${p.first_name}</option>`).join('');
+      if (cur) sel.value = cur;
+      sel.onchange = () => loadAdmissionsForSelect(sel);
+    });
+    // Beds for admission form
+    const bedSel = document.getElementById('admBedSel');
+    if (bedSel) {
+      const r = await fetch(`${API}/beds/`).catch(()=>null);
+      const beds = r?.ok ? await r.json() : [];
+      bedSel.innerHTML = '<option value="">– kein Bett –</option>' +
+        beds.filter(b=>b.status==='free').map(b=>`<option value="${b.id}">${b.station_name||''} Bett ${b.bed_number}${b.room?' · '+b.room:''}</option>`).join('');
+    }
+  }
+
+  async function loadAdmissionsForSelect(patientSel) {
+    const pid = patientSel.value;
+    const form = patientSel.closest('form');
+    const admSel = form?.querySelector('.clin-admission-sel');
+    if (!admSel) return;
+    if (!pid) { admSel.innerHTML = '<option value="">–</option>'; return; }
+    const r = await fetch(`${CLIN_API}/admissions/?patient=${pid}`).catch(()=>null);
+    const admissions = r?.ok ? await r.json() : [];
+    admSel.innerHTML = '<option value="">–</option>' +
+      admissions.map(a=>`<option value="${a.id}">${formatDate(a.admission_date)} · ${a.reason}</option>`).join('');
+  }
+
+  // ══════════════════════════════════════════════════════
+  // Clinical – load full summary for a patient
+  // ══════════════════════════════════════════════════════
+  async function loadClinicalSummary(patientId) {
+    const tabs = document.getElementById('clinicalTabs');
+    const empty = document.getElementById('clinicalEmpty');
+    if (!patientId) { tabs.classList.add('hidden'); empty.classList.remove('hidden'); return; }
+
+    const r = await fetch(`${CLIN_API}/patients/${patientId}/summary/`).catch(()=>null);
+    if (!r?.ok) return;
+    const d = await r.json();
+    const patient = allPatients.find(p=>p.id==patientId);
+
+    tabs.classList.remove('hidden');
+    empty.classList.add('hidden');
+
+    const tabDefs = [
+      { id:'admissions',   label:'🛏 Aufnahmen',      render: renderAdmissionsTab },
+      { id:'diagnoses',    label:'🔬 Diagnosen',       render: renderDiagnosesTab },
+      { id:'prescriptions',label:'💊 Medikamente',     render: renderPrescriptionsTab },
+      { id:'lab_results',  label:'🧪 Labor',           render: renderLabTab },
+      { id:'vital_signs',  label:'❤️ Vitals',          render: renderVitalsTab },
+      { id:'allergies',    label:'⚠️ Allergien',       render: renderAllergiesTab },
+      { id:'conditions',   label:'📋 Vorerkrankungen', render: renderConditionsTab },
+      { id:'surgeries',    label:'🏥 Operationen',     render: renderSurgeriesTab },
+      { id:'notes',        label:'📝 Notizen',         render: renderNotesTab },
+      { id:'procedures',   label:'⚕️ Prozeduren',      render: renderProceduresTab },
+      { id:'referrals',    label:'🔀 Überweisungen',   render: renderReferralsTab },
+    ];
+
+    let activeTab = tabDefs[0].id;
+
+    function renderTabs() {
+      document.getElementById('clinicalTabBtns').innerHTML = tabDefs.map(t => `
+        <button onclick="switchClinTab('${t.id}')" id="ctab-${t.id}"
+          class="px-3 py-1.5 text-xs font-medium rounded-t border-b-2 transition
+          ${t.id===activeTab?'border-blue-600 text-blue-700 bg-blue-50':'border-transparent text-gray-500 hover:text-gray-700'}">
+          ${t.label} <span class="ml-1 opacity-60">(${(d[t.id]||[]).length})</span>
+        </button>`).join('');
+      const tab = tabDefs.find(t=>t.id===activeTab);
+      document.getElementById('clinicalTabContent').innerHTML = tab.render(d[tab.id]||[]);
+    }
+
+    window.switchClinTab = function(id) { activeTab = id; renderTabs(); };
+    renderTabs();
+  }
+
+  function tbl(headers, rows) {
+    if (!rows.length) return '<div class="text-gray-400 text-sm py-4">Keine Einträge.</div>';
+    return `<div class="overflow-x-auto"><table class="w-full text-sm text-left">
+      <thead class="bg-gray-50 text-gray-500 uppercase text-xs"><tr>${headers.map(h=>`<th class="px-3 py-2">${h}</th>`).join('')}</tr></thead>
+      <tbody class="divide-y divide-gray-100">${rows.map((r,i)=>`<tr class="row-anim hover:bg-gray-50" style="animation-delay:${i*.03}s">${r.map(c=>`<td class="px-3 py-2">${c??'–'}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table></div>`;
+  }
+
+  function badge(text, color) {
+    const colors={green:'bg-green-50 text-green-700',red:'bg-red-50 text-red-700',yellow:'bg-yellow-50 text-yellow-700',blue:'bg-blue-50 text-blue-700',gray:'bg-gray-100 text-gray-600'};
+    return `<span class="text-xs px-2 py-0.5 rounded-full font-medium ${colors[color]||colors.gray}">${text}</span>`;
+  }
+
+  function renderAdmissionsTab(items) {
+    return tbl(['Datum','Entlassung','Bett','Grund','Status'],
+      items.map(a=>[formatDate(a.admission_date), formatDate(a.discharge_date),
+        a.bed||'–', a.reason,
+        a.is_active ? badge('Aktiv','green') : badge('Entlassen','gray')]));
+  }
+  function renderDiagnosesTab(items) {
+    const sc={active:'red',resolved:'green',chronic:'yellow'};
+    return tbl(['ICD-10','Beschreibung','Typ','Status','Datum','Arzt'],
+      items.map(i=>[`<strong>${i.icd_code}</strong>`, i.description,
+        i.type_display, badge(i.status_display, sc[i.status]||'gray'),
+        formatDate(i.date), i.doctor||'–']));
+  }
+  function renderPrescriptionsTab(items) {
+    const sc={active:'green',discontinued:'red',completed:'gray'};
+    return tbl(['Medikament','Dosierung','Häufigkeit','Weg','Status','Von','Bis'],
+      items.map(i=>[`<strong>${i.drug_name}</strong>`, `${i.dosage} ${i.unit}`,
+        i.frequency, i.route_display,
+        badge(i.status_display, sc[i.status]||'gray'),
+        formatDate(i.start_date), formatDate(i.end_date)]));
+  }
+  function renderLabTab(items) {
+    const sc={normal:'green',elevated:'red',low:'yellow',critical:'red'};
+    return tbl(['Test','Wert','Einheit','Referenz','Status','Datum'],
+      items.map(i=>[`<strong>${i.test_name}</strong>`, i.value, i.unit||'–',
+        i.reference_range||'–',
+        badge(i.status_display, sc[i.status]||'gray'),
+        formatDate(i.sample_date)]));
+  }
+  function renderVitalsTab(items) {
+    return tbl(['Zeitpunkt','BD','HF','Temp','O₂','Gewicht','BMI'],
+      items.map(i=>[
+        i.timestamp ? new Date(i.timestamp).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '–',
+        (i.systolic_bp&&i.diastolic_bp) ? `${i.systolic_bp}/${i.diastolic_bp}` : '–',
+        i.heart_rate ? `${i.heart_rate} bpm` : '–',
+        i.temperature ? `${i.temperature} °C` : '–',
+        i.oxygen_sat  ? `${i.oxygen_sat}%` : '–',
+        i.weight ? `${i.weight} kg` : '–',
+        i.bmi || '–']));
+  }
+  function renderAllergiesTab(items) {
+    const sc={mild:'green',moderate:'yellow',severe:'red'};
+    return tbl(['Substanz','Reaktion','Schweregrad','Datum'],
+      items.map(i=>[`<strong>${i.substance}</strong>`, i.reaction||'–',
+        badge(i.severity_display, sc[i.severity]||'gray'), formatDate(i.noted_at)]));
+  }
+  function renderConditionsTab(items) {
+    return tbl(['Erkrankung','ICD-10','Seit','Notizen'],
+      items.map(i=>[`<strong>${i.name}</strong>`, i.icd_code||'–', formatDate(i.since), i.notes||'–']));
+  }
+  function renderSurgeriesTab(items) {
+    return tbl(['Eingriff','OPS','Datum','Krankenhaus','Chirurg'],
+      items.map(i=>[`<strong>${i.procedure}</strong>`, i.ops_code||'–',
+        formatDate(i.date), i.hospital||'–', i.surgeon||'–']));
+  }
+  function renderNotesTab(items) {
+    if (!items.length) return '<div class="text-gray-400 text-sm py-4">Keine Notizen.</div>';
+    return items.map(n=>`
+      <div class="bg-gray-50 rounded-xl p-4 mb-3 row-anim border-l-4 border-blue-400">
+        <div class="flex justify-between text-xs text-gray-500 mb-1">
+          <span class="font-semibold text-blue-700">${n.note_type_display}</span>
+          <span>${new Date(n.created_at).toLocaleString('de-DE')} · ${n.author}</span>
+        </div>
+        <div class="text-sm text-gray-700 whitespace-pre-line">${n.content}</div>
+      </div>`).join('');
+  }
+  function renderProceduresTab(items) {
+    return tbl(['Bezeichnung','OPS','Datum','Arzt'],
+      items.map(i=>[`<strong>${i.name}</strong>`, i.ops_code||'–', formatDate(i.date), i.doctor||'–']));
+  }
+  function renderReferralsTab(items) {
+    const sc={pending:'yellow',completed:'green',cancelled:'red'};
+    return tbl(['Spezialist','Fachrichtung','Grund','Datum','Status'],
+      items.map(i=>[`<strong>${i.specialist}</strong>`, i.specialty||'–',
+        i.reason, formatDate(i.date),
+        badge(i.status_display, sc[i.status]||'gray')]));
+  }
+
+  // ══════════════════════════════════════════════════════
+  // Clinical – generic form submit
+  // ══════════════════════════════════════════════════════
+  async function submitClinical(e, endpoint, formId, label) {
+    e.preventDefault();
+    const form = document.getElementById(formId);
+    const btn  = form.querySelector('button[type="submit"]');
+    const msgId = formId.replace('Form','FormMsg');
+    const msg  = document.getElementById(msgId);
+    const data = Object.fromEntries(new FormData(form));
+    // Remove empty optional fields
+    ['admission','bed','end_date','discharge_date','result_date'].forEach(k => { if (!data[k]) delete data[k]; });
+    setLoading(btn, true, label);
+    try {
+      const res = await fetch(`${CLIN_API}/${endpoint}/`, {
+        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data)
+      });
+      if (res.ok) { showMsg(msg, `✓ Erfolgreich gespeichert.`, true); form.reset(); }
+      else { showMsg(msg, 'Fehler: ' + JSON.stringify(await res.json()), false); }
+    } catch { showMsg(msg, 'Serververbindung fehlgeschlagen.', false); }
+    finally { setLoading(btn, false, label); }
   }
 
   bootLoad();
