@@ -77,13 +77,57 @@
     .week-today .week-body { background:#f0f7ff; }
 
     .msg-anim { animation:fadeUp .3s ease both; }
+
+    /* ── New animations ── */
+    @keyframes slideIn  { from{opacity:0;transform:translateX(24px)} to{opacity:1;transform:translateX(0)} }
+    @keyframes toastIn  { from{opacity:0;transform:translateX(110%)} to{opacity:1;transform:translateX(0)} }
+    @keyframes toastOut { from{opacity:1;transform:translateX(0)} to{opacity:0;transform:translateX(110%)} }
+    @keyframes bedPulse { 0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.25)} 60%{box-shadow:0 0 0 8px rgba(220,38,38,0)} }
+    @keyframes float    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+    @keyframes tabSlide { from{opacity:0;transform:translateY(7px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes ripple   { from{width:0;height:0;opacity:.4} to{width:200px;height:200px;opacity:0} }
+    @keyframes shimmer  { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    .page-slide { animation:slideIn .3s cubic-bezier(.16,1,.3,1) both; }
+    .tab-slide  { animation:tabSlide .22s ease both; }
+
+    /* Toast */
+    #toastContainer { position:fixed; bottom:1.5rem; right:1.5rem; z-index:9999;
+      display:flex; flex-direction:column; gap:.5rem; pointer-events:none; }
+    .toast { display:flex; align-items:center; gap:.6rem; padding:.7rem 1.1rem;
+      border-radius:.75rem; font-size:.85rem; font-weight:500; min-width:200px; max-width:320px;
+      box-shadow:0 8px 24px rgba(0,0,0,.13); pointer-events:all;
+      animation:toastIn .35s cubic-bezier(.16,1,.3,1) both; }
+    .toast.ok  { background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; }
+    .toast.err { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; }
+    .toast.hiding { animation:toastOut .28s ease forwards; }
+
+    /* Occupied bed pulse */
+    .bed-card.bed-occupied { animation:bedPulse 2.4s ease-in-out infinite; }
+
+    /* KIS brand float */
+    .kis-logo { animation:float 4s ease-in-out infinite; display:inline-block; }
+
+    /* Nav ripple */
+    .nav-item { position:relative; overflow:hidden; }
+    .nav-ripple { position:absolute; border-radius:50%; background:rgba(29,78,216,.18);
+      animation:ripple .55s linear; pointer-events:none; transform:translate(-50%,-50%); }
+
+    /* Stat card shimmer */
+    .stat-card { position:relative; overflow:hidden; }
+    .stat-card::after { content:''; position:absolute; top:0; left:-200%; width:50%; height:100%;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);
+      animation:shimmer 3.2s ease-in-out infinite; }
+
+    /* Enhanced focus glow */
+    .form-input:focus { box-shadow:0 0 0 3px rgba(29,78,216,.15),0 1px 3px rgba(0,0,0,.08); }
   </style>
 </head>
 <body class="bg-gray-100 min-h-screen font-sans flex flex-col" style="min-height:100vh;">
 
 <!-- ═══ Header ═══ -->
 <header class="anim-header bg-blue-800 text-white px-5 py-3 flex items-center gap-3 shadow z-10">
-  <div class="text-xl font-bold tracking-widest">KIS</div>
+  <div class="text-xl font-bold tracking-widest kis-logo">KIS</div>
   <div class="h-5 w-px bg-blue-600"></div>
   <div class="text-sm text-blue-200">Krankenhausinformationssystem</div>
 </header>
@@ -764,9 +808,9 @@
       document.getElementById(`nav-${p}`)?.classList.remove('active');
     });
     const panel = document.getElementById(`page-${name}`);
-    panel.classList.remove('hidden', 'anim-panel');
+    panel.classList.remove('hidden', 'page-slide');
     void panel.offsetWidth;
-    panel.classList.add('anim-panel');
+    panel.classList.add('page-slide');
     document.getElementById(`nav-${name}`)?.classList.add('active');
 
     if (name === 'dashboard')        loadDashboard();
@@ -797,14 +841,23 @@
   // ══════════════════════════════════════════════════════
   // Dashboard
   // ══════════════════════════════════════════════════════
+  function animCount(el, to) {
+    const dur = 750, start = performance.now();
+    (function step(now) {
+      const p = Math.min((now - start) / dur, 1);
+      el.textContent = Math.round((1 - Math.pow(1 - p, 3)) * to);
+      if (p < 1) requestAnimationFrame(step);
+    })(start);
+  }
+
   async function loadDashboard() {
     try {
       const res = await fetch(`${API}/dashboard-stats/`);
       const d = await res.json();
-      document.getElementById('stat-patients').textContent = d.total_patients;
-      document.getElementById('stat-today').textContent    = d.todays_appointments;
-      document.getElementById('stat-open').textContent     = d.open_appointments;
-      document.getElementById('stat-beds').textContent     = `${d.free_beds} / ${d.total_beds}`;
+      animCount(document.getElementById('stat-patients'), d.total_patients);
+      animCount(document.getElementById('stat-today'),    d.todays_appointments);
+      animCount(document.getElementById('stat-open'),     d.open_appointments);
+      document.getElementById('stat-beds').textContent = `${d.free_beds} / ${d.total_beds}`;
 
       // Bed chart
       if (bedChart) bedChart.destroy();
@@ -1173,11 +1226,24 @@
     return {scheduled:'Geplant', completed:'Abgeschlossen', cancelled:'Abgesagt'}[s] ?? s;
   }
 
+  function showToast(text, ok) {
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = `toast ${ok ? 'ok' : 'err'}`;
+    t.textContent = (ok ? '✓ ' : '✕ ') + text;
+    c.appendChild(t);
+    setTimeout(() => {
+      t.classList.add('hiding');
+      setTimeout(() => t.remove(), 300);
+    }, 3500);
+  }
+
   function showMsg(el, text, ok) {
     el.textContent = text;
     el.className = `msg-anim text-sm rounded px-3 py-2 border ${ok?'bg-green-50 text-green-700 border-green-200':'bg-red-50 text-red-700 border-red-200'}`;
     el.classList.remove('hidden');
     setTimeout(()=>el.classList.add('hidden'), 4000);
+    showToast(text, ok);
   }
 
   function setLoading(btn, loading, label) {
@@ -1283,7 +1349,14 @@
       document.getElementById('clinicalTabContent').innerHTML = tab.render(d[tab.id]||[]);
     }
 
-    window.switchClinTab = function(id) { activeTab = id; renderTabs(); };
+    window.switchClinTab = function(id) {
+      activeTab = id;
+      renderTabs();
+      const c = document.getElementById('clinicalTabContent');
+      c.classList.remove('tab-slide');
+      void c.offsetWidth;
+      c.classList.add('tab-slide');
+    };
     renderTabs();
   }
 
@@ -1401,7 +1474,21 @@
     finally { setLoading(btn, false, label); }
   }
 
+  // Nav ripple on click
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', function(e) {
+      const r = document.createElement('span');
+      r.className = 'nav-ripple';
+      const rect = this.getBoundingClientRect();
+      r.style.left = (e.clientX - rect.left) + 'px';
+      r.style.top  = (e.clientY - rect.top)  + 'px';
+      this.appendChild(r);
+      r.addEventListener('animationend', () => r.remove());
+    });
+  });
+
   bootLoad();
 </script>
+<div id="toastContainer"></div>
 </body>
 </html>
