@@ -79,7 +79,7 @@
     .msg-anim { animation:fadeUp .3s ease both; }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen font-sans flex flex-col">
+<body class="bg-gray-100 min-h-screen font-sans flex flex-col" style="min-height:100vh;">
 
 <!-- ═══ Header ═══ -->
 <header class="anim-header bg-blue-800 text-white px-5 py-3 flex items-center gap-3 shadow z-10">
@@ -88,7 +88,7 @@
   <div class="text-sm text-blue-200">Krankenhausinformationssystem</div>
 </header>
 
-<div class="flex flex-1 overflow-hidden">
+<div class="flex overflow-hidden" style="flex:1; min-height:0;">
 
   <!-- ═══ Sidebar ═══ -->
   <aside class="w-56 min-w-56 bg-white border-r border-gray-200 flex flex-col overflow-y-auto anim-header">
@@ -678,6 +678,58 @@
 
   </main>
 </div>
+
+<!-- ═══ Footer ═══ -->
+<footer class="bg-white border-t border-gray-200 text-sm text-gray-500">
+  <div class="max-w-7xl mx-auto px-6 py-5 grid grid-cols-1 md:grid-cols-3 gap-6">
+
+    <!-- Branding -->
+    <div>
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-blue-800 font-bold text-lg tracking-widest">KIS</span>
+        <span class="text-gray-300">|</span>
+        <span class="text-xs text-gray-400">Krankenhausinformationssystem</span>
+      </div>
+      <p class="text-xs text-gray-400 leading-relaxed">
+        Internes Verwaltungssystem für Patientendaten,<br>
+        Stationen, Termine und klinische Dokumentation.
+      </p>
+    </div>
+
+    <!-- Navigation -->
+    <div>
+      <div class="font-semibold text-gray-600 mb-2 text-xs uppercase tracking-wide">Navigation</div>
+      <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+        <span class="hover:text-blue-600 cursor-pointer" onclick="showPage('dashboard')">Dashboard</span>
+        <span class="hover:text-blue-600 cursor-pointer" onclick="showPage('calendar')">Kalender</span>
+        <span class="hover:text-blue-600 cursor-pointer" onclick="showPage('patients')">Patientenliste</span>
+        <span class="hover:text-blue-600 cursor-pointer" onclick="showPage('stations')">Stationen & Betten</span>
+        <span class="hover:text-blue-600 cursor-pointer" onclick="showPage('clinical')">Klinische Akte</span>
+        <span class="hover:text-blue-600 cursor-pointer" onclick="showPage('new-appointment')">Neuer Termin</span>
+      </div>
+    </div>
+
+    <!-- Info -->
+    <div>
+      <div class="font-semibold text-gray-600 mb-2 text-xs uppercase tracking-wide">System</div>
+      <ul class="text-xs space-y-1">
+        <li>Version <span class="font-medium text-gray-600">1.0.0</span></li>
+        <li>Backend <span class="font-medium text-gray-600">Django 6.0 · DRF</span></li>
+        <li>Datenbank <span class="font-medium text-gray-600">SQLite3</span></li>
+        <li>API <span class="font-medium text-gray-600 cursor-pointer hover:text-blue-600" onclick="window.open('http://127.0.0.1:8000/api/')">http://127.0.0.1:8000/api/</span></li>
+      </ul>
+    </div>
+
+  </div>
+  <div class="border-t border-gray-100 px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-400">
+    <span>© 2026 KIS – Alle Rechte vorbehalten</span>
+    <div class="flex gap-4">
+      <span class="hover:text-gray-600 cursor-pointer">Datenschutz</span>
+      <span class="hover:text-gray-600 cursor-pointer">Impressum</span>
+      <span class="hover:text-gray-600 cursor-pointer">Kontakt</span>
+    </div>
+  </div>
+</footer>
 
 <!-- ── Tailwind utility classes via @apply workaround ── -->
 <style>
