@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>KIS – Patientenverwaltung</title>
+  <title>KIS – Krankenhausinformationssystem</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
@@ -121,6 +121,36 @@
 
     /* Enhanced focus glow */
     .form-input:focus { box-shadow:0 0 0 3px rgba(29,78,216,.15),0 1px 3px rgba(0,0,0,.08); }
+
+    /* ── Anamnese-Panel ── */
+    .preop-panel { border-radius:.75rem; overflow:hidden; box-shadow:0 2px 12px rgba(0,0,0,.07); }
+    .preop-header { display:flex; align-items:center; justify-content:space-between;
+      padding:.65rem 1rem; background:#1e3a5f; color:#fff; font-size:.8rem; font-weight:700;
+      letter-spacing:.04em; cursor:pointer; user-select:none; }
+    .preop-header:hover { background:#1d4ed8; }
+    .preop-body { background:#fff; border:1px solid #e0e7ff; border-top:none; padding:1rem; }
+    .preop-section { margin-bottom:.9rem; }
+    .preop-section:last-child { margin-bottom:0; }
+    .preop-section-title { font-size:.68rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.08em; color:#6b7280; margin-bottom:.4rem; }
+    .allergy-badge-severe   { background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; }
+    .allergy-badge-moderate { background:#fef9c3; color:#92400e; border:1px solid #fde68a; }
+    .allergy-badge-mild     { background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; }
+    .allergy-badge { display:inline-flex; align-items:center; gap:.3rem;
+      padding:.2rem .6rem; border-radius:999px; font-size:.75rem; font-weight:600; margin:.1rem; }
+    .preop-pill { display:inline-block; background:#f1f5f9; color:#334155;
+      border:1px solid #cbd5e1; border-radius:6px; font-size:.75rem;
+      padding:.15rem .5rem; margin:.1rem; }
+    .preop-vitals-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:.4rem; }
+    .preop-vital-box { background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px;
+      padding:.4rem .5rem; text-align:center; }
+    .preop-vital-box .val { font-size:1rem; font-weight:700; color:#1d4ed8; }
+    .preop-vital-box .lbl { font-size:.65rem; color:#94a3b8; }
+    .preop-alert { background:#fef2f2; border:1px solid #fca5a5; border-radius:.5rem;
+      padding:.5rem .75rem; font-size:.8rem; color:#b91c1c; font-weight:600;
+      display:flex; align-items:center; gap:.4rem; margin-bottom:.6rem; }
+    @keyframes preopIn { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+    .preop-panel { animation:preopIn .35s cubic-bezier(.16,1,.3,1) both; }
   </style>
 </head>
 <body class="bg-gray-100 min-h-screen font-sans flex flex-col" style="min-height:100vh;">
@@ -198,6 +228,23 @@
     </div>
     <div class="nav-item" id="nav-new-discharge" onclick="showPage('new-discharge')">
       <span>📄</span> Entlassbrief
+    </div>
+
+    <div class="nav-section">Operationen</div>
+    <div class="nav-item" id="nav-op-dashboard" onclick="showPage('op-dashboard')">
+      <span>🔪</span> OP-Übersicht
+    </div>
+    <div class="nav-item" id="nav-op-rooms" onclick="showPage('op-rooms')">
+      <span>🏛</span> OP-Säle
+    </div>
+    <div class="nav-item" id="nav-op-new" onclick="showPage('op-new')">
+      <span>➕</span> OP planen
+    </div>
+    <div class="nav-item" id="nav-op-anesthesia" onclick="showPage('op-anesthesia')">
+      <span>💉</span> Narkoseprotokoll
+    </div>
+    <div class="nav-item" id="nav-op-report" onclick="showPage('op-report')">
+      <span>📋</span> OP-Bericht
     </div>
   </aside>
 
@@ -720,6 +767,278 @@
       </div>
     </div>
 
+    <!-- ══════════════════════════════════════════════════════
+         OPERATIONEN
+    ══════════════════════════════════════════════════════ -->
+
+    <!-- ── OP-Übersicht ── -->
+    <div id="page-op-dashboard" class="hidden space-y-6">
+      <h1 class="text-xl font-bold text-gray-800">OP-Übersicht</h1>
+
+      <!-- Stat cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="stat-card bg-white rounded-xl shadow p-4" style="animation-delay:.0s">
+          <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">OPs heute</div>
+          <div class="text-3xl font-bold text-blue-700" id="op-stat-today">–</div>
+        </div>
+        <div class="stat-card bg-white rounded-xl shadow p-4" style="animation-delay:.08s">
+          <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Geplant</div>
+          <div class="text-3xl font-bold text-indigo-600" id="op-stat-planned">–</div>
+        </div>
+        <div class="stat-card bg-white rounded-xl shadow p-4" style="animation-delay:.16s">
+          <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">In Durchführung</div>
+          <div class="text-3xl font-bold text-orange-500" id="op-stat-inprog">–</div>
+        </div>
+        <div class="stat-card bg-white rounded-xl shadow p-4" style="animation-delay:.24s">
+          <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Notfälle ausstehend</div>
+          <div class="text-3xl font-bold text-red-600" id="op-stat-emergency">–</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <!-- OP-Säle -->
+        <div class="bg-white rounded-xl shadow p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-gray-700">OP-Saal Status</h2>
+            <button onclick="showPage('op-rooms')" class="text-xs text-blue-600 hover:underline">Verwalten →</button>
+          </div>
+          <div id="opRoomStatus" class="grid grid-cols-2 gap-2"></div>
+        </div>
+
+        <!-- Heutige OPs -->
+        <div class="bg-white rounded-xl shadow p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-gray-700">Heutige Operationen</h2>
+            <button onclick="showPage('op-new')" class="text-xs text-blue-600 hover:underline">+ OP planen</button>
+          </div>
+          <div id="opTodayList" class="space-y-2 text-sm"></div>
+        </div>
+      </div>
+
+      <!-- Nächste OPs -->
+      <div class="bg-white rounded-xl shadow p-5">
+        <h2 class="text-sm font-semibold text-gray-700 mb-3">Nächste geplante Operationen</h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left">
+            <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
+              <tr>
+                <th class="px-3 py-2">Datum</th>
+                <th class="px-3 py-2">Uhrzeit</th>
+                <th class="px-3 py-2">Patient</th>
+                <th class="px-3 py-2">Eingriff</th>
+                <th class="px-3 py-2">Operateur</th>
+                <th class="px-3 py-2">Saal</th>
+                <th class="px-3 py-2">Priorität</th>
+                <th class="px-3 py-2">Status</th>
+              </tr>
+            </thead>
+            <tbody id="opNextList" class="divide-y divide-gray-100"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── OP-Säle ── -->
+    <div id="page-op-rooms" class="hidden space-y-5">
+      <div class="flex items-center justify-between">
+        <h1 class="text-xl font-bold text-gray-800">OP-Säle</h1>
+        <button onclick="document.getElementById('newRoomForm').classList.toggle('hidden')" class="btn-primary text-sm px-4 py-2">+ Neuer Saal</button>
+      </div>
+
+      <!-- Inline form -->
+      <div id="newRoomForm" class="hidden bg-white rounded-xl shadow p-5 max-w-xl anim-panel">
+        <h2 class="text-base font-semibold text-gray-700 mb-4">Neuen OP-Saal anlegen</h2>
+        <form id="roomForm" onsubmit="submitOpRoom(event)" class="space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="form-label">Bezeichnung *</label><input name="name" required class="form-input" placeholder="z. B. OP 1 – Allgemeinchirurgie"/></div>
+            <div><label class="form-label">Etage</label><input name="floor" class="form-input" placeholder="z. B. 2. OG"/></div>
+          </div>
+          <div><label class="form-label">Beschreibung</label><textarea name="description" rows="2" class="form-input"></textarea></div>
+          <div><label class="form-label">Status</label>
+            <select name="status" class="form-input">
+              <option value="available">Verfügbar</option>
+              <option value="occupied">Belegt</option>
+              <option value="cleaning">Reinigung</option>
+              <option value="maintenance">Außer Betrieb</option>
+            </select>
+          </div>
+          <div id="roomFormMsg" class="hidden text-sm rounded px-3 py-2"></div>
+          <button type="submit" class="btn-primary">Saal anlegen</button>
+        </form>
+      </div>
+
+      <div id="opRoomsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+
+    <!-- ── OP planen ── -->
+    <div id="page-op-new" class="hidden">
+      <h1 class="text-xl font-bold text-gray-800 mb-5">Operation planen</h1>
+
+      <!-- Anamnese-Panel (erscheint bei Patientenauswahl) -->
+      <div id="opAnamnesePanel" class="hidden max-w-2xl mb-4"></div>
+
+      <div class="bg-white rounded-xl shadow p-5 max-w-2xl anim-panel">
+        <form id="opNewForm" onsubmit="submitOperation(event)" class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">Patient *</label>
+              <select name="patient" id="opPatientSel" required class="form-input">
+                <option value="">– Patient auswählen –</option>
+              </select>
+            </div>
+            <div><label class="form-label">Aufnahme (optional)</label>
+              <select name="admission" id="opAdmissionSel" class="form-input">
+                <option value="">–</option>
+              </select>
+            </div>
+          </div>
+          <div><label class="form-label">Eingriff / Bezeichnung *</label>
+            <input name="name" required class="form-input" placeholder="z. B. Appendektomie"/>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">OPS-Code</label><input name="ops_code" class="form-input" placeholder="z. B. 5-470"/></div>
+            <div><label class="form-label">ICD-10 Indikation</label><input name="icd_code" class="form-input" placeholder="z. B. K37"/></div>
+          </div>
+          <div><label class="form-label">Indikation / Diagnose</label>
+            <textarea name="indication" rows="2" class="form-input" placeholder="Klinische Begründung…"></textarea>
+          </div>
+          <div class="grid grid-cols-3 gap-4">
+            <div><label class="form-label">Datum *</label><input name="planned_date" type="date" required class="form-input"/></div>
+            <div><label class="form-label">Uhrzeit *</label><input name="planned_start" type="time" required class="form-input"/></div>
+            <div><label class="form-label">Dauer (min) *</label><input name="planned_duration_min" type="number" min="10" value="60" required class="form-input"/></div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">Priorität</label>
+              <select name="priority" class="form-input">
+                <option value="elective">Elektiv</option>
+                <option value="urgent">Dringend</option>
+                <option value="emergency">Notfall</option>
+              </select>
+            </div>
+            <div><label class="form-label">OP-Saal</label>
+              <select name="operation_room" id="opRoomSel" class="form-input">
+                <option value="">– kein Saal –</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">Hauptoperateur *</label><input name="lead_surgeon" required class="form-input" placeholder="Dr. Müller"/></div>
+            <div><label class="form-label">Assistenz</label><input name="assistant_surgeon" class="form-input"/></div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">Anästhesist</label><input name="anesthesiologist" class="form-input"/></div>
+            <div><label class="form-label">Instrumentierpflege</label><input name="scrub_nurse" class="form-input"/></div>
+          </div>
+          <div><label class="form-label">Status</label>
+            <select name="status" class="form-input">
+              <option value="planned">Geplant</option>
+              <option value="in_progress">In Durchführung</option>
+              <option value="completed">Abgeschlossen</option>
+              <option value="postponed">Verschoben</option>
+              <option value="cancelled">Abgesagt</option>
+            </select>
+          </div>
+          <div><label class="form-label">Präoperative Anmerkungen</label>
+            <textarea name="preop_notes" rows="2" class="form-input"></textarea>
+          </div>
+          <div id="opNewFormMsg" class="hidden text-sm rounded px-3 py-2"></div>
+          <button type="submit" class="btn-primary">Operation speichern</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── Narkoseprotokoll ── -->
+    <div id="page-op-anesthesia" class="hidden">
+      <h1 class="text-xl font-bold text-gray-800 mb-5">Narkoseprotokoll</h1>
+
+      <!-- Anamnese-Panel (erscheint nach Op-Auswahl) -->
+      <div id="anAnamnesePanel" class="hidden max-w-2xl mb-4"></div>
+
+      <div class="bg-white rounded-xl shadow p-5 max-w-2xl anim-panel">
+        <form id="anesthesiaForm" onsubmit="submitAnesthesia(event)" class="space-y-4">
+          <div><label class="form-label">Operation *</label>
+            <select name="operation" id="anOpSel" required class="form-input">
+              <option value="">– Operation auswählen –</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">Narkoseart *</label>
+              <select name="anesthesia_type" required class="form-input">
+                <option value="general">Vollnarkose</option>
+                <option value="regional">Regionalanästhesie</option>
+                <option value="spinal">Spinalanästhesie</option>
+                <option value="epidural">Epiduralanästhesie</option>
+                <option value="local">Lokalanästhesie</option>
+                <option value="sedation">Sedierung</option>
+                <option value="other">Sonstiges</option>
+              </select>
+            </div>
+            <div><label class="form-label">ASA-Klassifikation</label>
+              <select name="asa_classification" class="form-input">
+                <option value="">–</option>
+                <option value="I">ASA I – Gesund</option>
+                <option value="II">ASA II – Leichte Erkrankung</option>
+                <option value="III">ASA III – Schwere Erkrankung</option>
+                <option value="IV">ASA IV – Lebensbedrohlich</option>
+                <option value="V">ASA V – Moribund</option>
+              </select>
+            </div>
+          </div>
+          <div><label class="form-label">Anästhesist *</label><input name="anesthesiologist" required class="form-input"/></div>
+          <div class="grid grid-cols-3 gap-4">
+            <div><label class="form-label">Einleitungsmittel</label><input name="induction_agent" class="form-input" placeholder="z. B. Propofol"/></div>
+            <div><label class="form-label">Aufrechterhaltung</label><input name="maintenance_agent" class="form-input" placeholder="z. B. Sevofluran"/></div>
+            <div><label class="form-label">Muskelrelaxans</label><input name="muscle_relaxant" class="form-input" placeholder="z. B. Rocuronium"/></div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">Narkosebeginn</label><input name="start_time" type="datetime-local" class="form-input"/></div>
+            <div><label class="form-label">Narkoseende</label><input name="end_time" type="datetime-local" class="form-input"/></div>
+          </div>
+          <div><label class="form-label">Prämedikation</label><textarea name="premedication" rows="2" class="form-input"></textarea></div>
+          <div><label class="form-label">Intraoperative Ereignisse</label><textarea name="intraop_events" rows="2" class="form-input"></textarea></div>
+          <div><label class="form-label">Aufwachraumprotokoll</label><textarea name="recovery_notes" rows="2" class="form-input"></textarea></div>
+          <div><label class="form-label">Komplikationen</label><textarea name="complications" rows="2" class="form-input"></textarea></div>
+          <div id="anesthesiaFormMsg" class="hidden text-sm rounded px-3 py-2"></div>
+          <button type="submit" class="btn-primary">Narkoseprotokoll speichern</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── OP-Bericht ── -->
+    <div id="page-op-report" class="hidden">
+      <h1 class="text-xl font-bold text-gray-800 mb-5">OP-Bericht</h1>
+      <div class="bg-white rounded-xl shadow p-5 max-w-2xl anim-panel">
+        <form id="opReportForm" onsubmit="submitOpReport(event)" class="space-y-4">
+          <div><label class="form-label">Operation *</label>
+            <select name="operation" id="reportOpSel" required class="form-input">
+              <option value="">– Operation auswählen –</option>
+            </select>
+          </div>
+          <div><label class="form-label">Autor *</label><input name="author" required class="form-input"/></div>
+          <div><label class="form-label">Operationsbeschreibung *</label>
+            <textarea name="procedure_details" required rows="5" class="form-input" placeholder="Detaillierte Beschreibung des Operationsverlaufs…"></textarea>
+          </div>
+          <div><label class="form-label">Intraoperativer Befund</label>
+            <textarea name="findings" rows="3" class="form-input"></textarea>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">Entnommenes Material / Histologie</label><input name="specimen" class="form-input"/></div>
+            <div><label class="form-label">Blutverlust (ml)</label><input name="blood_loss_ml" type="number" min="0" class="form-input"/></div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="form-label">Transfusionen</label><input name="transfusions" class="form-input"/></div>
+            <div><label class="form-label">Wundverschluss</label><input name="closing_technique" class="form-input" placeholder="z. B. Fortlaufende Naht"/></div>
+          </div>
+          <div><label class="form-label">Drainagen</label><input name="drains" class="form-input"/></div>
+          <div><label class="form-label">Komplikationen</label><textarea name="complications" rows="2" class="form-input"></textarea></div>
+          <div><label class="form-label">Postoperative Anordnungen</label>
+            <textarea name="postop_instructions" rows="3" class="form-input" placeholder="Verbandswechsel, Mobilisation, Medikation…"></textarea>
+          </div>
+          <div id="opReportFormMsg" class="hidden text-sm rounded px-3 py-2"></div>
+          <button type="submit" class="btn-primary">OP-Bericht speichern</button>
+        </form>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -750,6 +1069,8 @@
         <span class="hover:text-blue-600 cursor-pointer" onclick="showPage('stations')">Stationen & Betten</span>
         <span class="hover:text-blue-600 cursor-pointer" onclick="showPage('clinical')">Klinische Akte</span>
         <span class="hover:text-blue-600 cursor-pointer" onclick="showPage('new-appointment')">Neuer Termin</span>
+        <span class="hover:text-blue-600 cursor-pointer" onclick="showPage('op-dashboard')">OP-Übersicht</span>
+        <span class="hover:text-blue-600 cursor-pointer" onclick="showPage('op-new')">OP planen</span>
       </div>
     </div>
 
@@ -798,9 +1119,12 @@
   // Navigation
   // ══════════════════════════════════════════════════════
   const CLIN_API = 'http://127.0.0.1:8000/api/clinical';
+  const OP_API  = 'http://127.0.0.1:8000/api/operation';
   const PAGES = ['dashboard','calendar','patients','new-patient','new-appointment','stations','new-station',
     'clinical','new-admission','new-diagnosis','new-prescription','new-lab','new-vitals',
-    'new-history','new-note','new-procedure','new-referral','new-discharge'];
+    'new-history','new-note','new-procedure','new-referral','new-discharge',
+    'op-dashboard','op-rooms','op-new','op-anesthesia','op-report'];
+  let allOperations = [], allOpRooms = [];
 
   function showPage(name) {
     PAGES.forEach(p => {
@@ -823,18 +1147,27 @@
     if (PAGES.includes(name) && name.startsWith('new-') && name !== 'new-patient' && name !== 'new-appointment' && name !== 'new-station') {
       populateClinicalSelects();
     }
+    if (name === 'op-dashboard')  loadOpDashboard();
+    if (name === 'op-rooms')      renderOpRooms();
+    if (name === 'op-new')        populateOpSelects();
+    if (name === 'op-anesthesia') populateOpOperationSelect('anOpSel');
+    if (name === 'op-report')     populateOpOperationSelect('reportOpSel');
   }
 
   // ══════════════════════════════════════════════════════
   // Load all data on boot
   // ══════════════════════════════════════════════════════
   async function bootLoad() {
-    const [pRes, sRes] = await Promise.all([
+    const [pRes, sRes, opRes, roomRes] = await Promise.all([
       fetch(`${API}/patients/`).catch(()=>null),
       fetch(`${API}/stations/`).catch(()=>null),
+      fetch(`${OP_API}/operations/`).catch(()=>null),
+      fetch(`${OP_API}/rooms/`).catch(()=>null),
     ]);
-    if (pRes?.ok) allPatients = await pRes.json();
-    if (sRes?.ok) allStations = await sRes.json();
+    if (pRes?.ok)   allPatients   = await pRes.json();
+    if (sRes?.ok)   allStations   = await sRes.json();
+    if (opRes?.ok)  allOperations = await opRes.json();
+    if (roomRes?.ok) allOpRooms   = await roomRes.json();
     loadDashboard();
   }
 
@@ -1472,6 +1805,404 @@
       else { showMsg(msg, 'Fehler: ' + JSON.stringify(await res.json()), false); }
     } catch { showMsg(msg, 'Serververbindung fehlgeschlagen.', false); }
     finally { setLoading(btn, false, label); }
+  }
+
+  // ══════════════════════════════════════════════════════
+  // Operationen
+  // ══════════════════════════════════════════════════════
+  const OP_PRIORITY_COLOR = { elective:'blue', urgent:'yellow', emergency:'red' };
+  const OP_STATUS_COLOR   = { planned:'blue', in_progress:'orange', completed:'green', cancelled:'gray', postponed:'yellow' };
+  const OP_ROOM_COLOR     = { available:'bg-green-50 border-green-300 text-green-700',
+                               occupied:'bg-red-50 border-red-300 text-red-700',
+                               cleaning:'bg-yellow-50 border-yellow-300 text-yellow-700',
+                               maintenance:'bg-gray-100 border-gray-300 text-gray-500' };
+  const OP_ROOM_ICON      = { available:'🟢', occupied:'🔴', cleaning:'🟡', maintenance:'⚫' };
+  const OP_ROOM_DE        = { available:'Verfügbar', occupied:'Belegt', cleaning:'Reinigung', maintenance:'Außer Betrieb' };
+
+  async function loadOpDashboard() {
+    try {
+      const res = await fetch(`${OP_API}/dashboard/`);
+      const d   = await res.json();
+
+      animCount(document.getElementById('op-stat-today'),     d.today_operations);
+      animCount(document.getElementById('op-stat-planned'),   d.planned);
+      animCount(document.getElementById('op-stat-inprog'),    d.in_progress);
+      animCount(document.getElementById('op-stat-emergency'), d.emergency_pending);
+
+      // Refresh room list
+      const rRes = await fetch(`${OP_API}/rooms/`).catch(()=>null);
+      if (rRes?.ok) allOpRooms = await rRes.json();
+
+      // Room status grid
+      const roomEl = document.getElementById('opRoomStatus');
+      if (!allOpRooms.length) {
+        roomEl.innerHTML = '<p class="text-gray-400 text-sm col-span-2">Keine OP-Säle angelegt.</p>';
+      } else {
+        roomEl.innerHTML = allOpRooms.map((r, i) => `
+          <div class="border rounded-lg p-3 anim-panel" style="animation-delay:${i*.06}s;
+            ${r.status==='occupied'?'border-red-300 bg-red-50':r.status==='available'?'border-green-300 bg-green-50':r.status==='cleaning'?'border-yellow-300 bg-yellow-50':'border-gray-300 bg-gray-50'}">
+            <div class="font-semibold text-sm">${OP_ROOM_ICON[r.status]} ${r.name}</div>
+            <div class="text-xs text-gray-500 mt-0.5">${r.floor||'–'} · ${OP_ROOM_DE[r.status]}</div>
+          </div>`).join('');
+      }
+
+      // Today list
+      const todayEl = document.getElementById('opTodayList');
+      if (!d.today_list.length) {
+        todayEl.innerHTML = '<p class="text-gray-400 text-sm">Keine Operationen heute.</p>';
+      } else {
+        todayEl.innerHTML = d.today_list.map(o => `
+          <div class="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 row-anim">
+            <div>
+              <div class="font-medium text-gray-800 text-sm">${o.patient_name}</div>
+              <div class="text-xs text-gray-500">${o.planned_start?.slice(0,5)} · ${o.name}${o.room_name?' · '+o.room_name:''}</div>
+            </div>
+            ${opPriorityBadge(o.priority, o.priority_display)}
+          </div>`).join('');
+      }
+
+      // Next ops table
+      const nextEl = document.getElementById('opNextList');
+      if (!d.next_operations.length) {
+        nextEl.innerHTML = '<tr><td colspan="8" class="px-3 py-6 text-center text-gray-400">Keine geplanten Operationen.</td></tr>';
+      } else {
+        nextEl.innerHTML = d.next_operations.map((o, i) => `
+          <tr class="row-anim hover:bg-gray-50" style="animation-delay:${i*.04}s">
+            <td class="px-3 py-2">${formatDate(o.planned_date)}</td>
+            <td class="px-3 py-2">${o.planned_start?.slice(0,5)}</td>
+            <td class="px-3 py-2 font-medium">${o.patient_name}</td>
+            <td class="px-3 py-2">${o.name}${o.ops_code?' <span class="text-xs text-gray-400">('+o.ops_code+')</span>':''}</td>
+            <td class="px-3 py-2">${o.lead_surgeon}</td>
+            <td class="px-3 py-2">${o.room_name||'–'}</td>
+            <td class="px-3 py-2">${opPriorityBadge(o.priority, o.priority_display)}</td>
+            <td class="px-3 py-2">${opStatusBadge(o.status, o.status_display)}</td>
+          </tr>`).join('');
+      }
+    } catch { console.error('OP dashboard load failed'); }
+  }
+
+  function opPriorityBadge(p, label) {
+    const c = {elective:'bg-blue-50 text-blue-700', urgent:'bg-yellow-50 text-yellow-700', emergency:'bg-red-100 text-red-700 font-semibold'};
+    return `<span class="text-xs px-2 py-0.5 rounded-full ${c[p]||'bg-gray-100 text-gray-600'}">${label||p}</span>`;
+  }
+  function opStatusBadge(s, label) {
+    const c = {planned:'bg-blue-50 text-blue-700', in_progress:'bg-orange-50 text-orange-700', completed:'bg-green-50 text-green-700', cancelled:'bg-gray-100 text-gray-500', postponed:'bg-yellow-50 text-yellow-700'};
+    return `<span class="text-xs px-2 py-0.5 rounded-full ${c[s]||'bg-gray-100 text-gray-600'}">${label||s}</span>`;
+  }
+
+  async function renderOpRooms() {
+    const res = await fetch(`${OP_API}/rooms/`).catch(()=>null);
+    allOpRooms = res?.ok ? await res.json() : [];
+    const el = document.getElementById('opRoomsList');
+    if (!allOpRooms.length) {
+      el.innerHTML = '<p class="text-gray-400 text-sm">Noch keine OP-Säle angelegt.</p>'; return;
+    }
+    el.innerHTML = allOpRooms.map((r, i) => `
+      <div class="bg-white rounded-xl shadow p-5 border-l-4 anim-panel
+        ${r.status==='available'?'border-green-400':r.status==='occupied'?'border-red-400':r.status==='cleaning'?'border-yellow-400':'border-gray-300'}"
+        style="animation-delay:${i*.07}s">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-bold text-gray-800">${OP_ROOM_ICON[r.status]} ${r.name}</h3>
+          <select onchange="updateRoomStatus(${r.id}, this.value)"
+            class="text-xs border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-400">
+            ${['available','occupied','cleaning','maintenance'].map(s=>
+              `<option value="${s}" ${s===r.status?'selected':''}>${OP_ROOM_DE[s]}</option>`).join('')}
+          </select>
+        </div>
+        <div class="text-sm text-gray-500">${r.description||'–'}</div>
+        <div class="text-xs text-gray-400 mt-1">${r.floor?'Etage: '+r.floor:''}</div>
+      </div>`).join('');
+  }
+
+  async function updateRoomStatus(id, status) {
+    const res = await fetch(`${OP_API}/rooms/${id}/`, {
+      method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status})
+    }).catch(()=>null);
+    if (res?.ok) {
+      showToast('Saal-Status aktualisiert.', true);
+      const r = allOpRooms.find(r=>r.id===id);
+      if (r) r.status = status;
+    }
+  }
+
+  async function submitOpRoom(e) {
+    e.preventDefault();
+    const form = e.target, btn = form.querySelector('button[type="submit"]');
+    const msg  = document.getElementById('roomFormMsg');
+    setLoading(btn, true, 'Saal anlegen');
+    try {
+      const res = await fetch(`${OP_API}/rooms/`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(Object.fromEntries(new FormData(form)))
+      });
+      if (res.ok) {
+        showMsg(msg, '✓ OP-Saal angelegt.', true);
+        form.reset();
+        document.getElementById('newRoomForm').classList.add('hidden');
+        renderOpRooms();
+        const rr = await fetch(`${OP_API}/rooms/`).catch(()=>null);
+        if (rr?.ok) allOpRooms = await rr.json();
+      } else { showMsg(msg, 'Fehler: ' + JSON.stringify(await res.json()), false); }
+    } catch { showMsg(msg, 'Serververbindung fehlgeschlagen.', false); }
+    finally { setLoading(btn, false, 'Saal anlegen'); }
+  }
+
+  // ─── Pre-op anamnesis panel ───────────────────────────────────────────────
+  async function loadPreopPanel(patientId, panelId) {
+    const panel = document.getElementById(panelId);
+    if (!patientId) { panel.classList.add('hidden'); return; }
+
+    panel.innerHTML = `<div class="preop-panel"><div class="preop-header">⏳ Lade Anamnese…</div></div>`;
+    panel.classList.remove('hidden');
+
+    const res = await fetch(`${OP_API}/patients/${patientId}/preop-summary/`).catch(()=>null);
+    if (!res?.ok) { panel.innerHTML = ''; panel.classList.add('hidden'); return; }
+    const d = await res.json();
+
+    const allergySeverityClass = { severe:'allergy-badge-severe', moderate:'allergy-badge-moderate', mild:'allergy-badge-mild' };
+    const allergySeverityIcon  = { severe:'⛔', moderate:'⚠️', mild:'ℹ️' };
+
+    // Allergy warning banner
+    const severeAllergies = d.allergies.filter(a => a.severity === 'severe');
+    const allergyAlert = severeAllergies.length
+      ? `<div class="preop-alert">⛔ Schwere Allergien: ${severeAllergies.map(a=>`<strong>${a.substance}</strong>`).join(', ')}</div>`
+      : '';
+
+    // Allergies section
+    const allergyHtml = d.allergies.length
+      ? d.allergies.map(a =>
+          `<span class="allergy-badge ${allergySeverityClass[a.severity]||'allergy-badge-mild'}">
+            ${allergySeverityIcon[a.severity]||'ℹ️'} ${a.substance}
+            ${a.reaction ? `<span style="font-weight:400;opacity:.8">– ${a.reaction}</span>` : ''}
+          </span>`).join('')
+      : '<span class="text-gray-400 text-xs">Keine bekannten Allergien</span>';
+
+    // Conditions
+    const condHtml = d.conditions.length
+      ? d.conditions.map(c =>
+          `<span class="preop-pill">${c.name}${c.icd_code?' <span class="opacity-60">('+c.icd_code+')</span>':''}</span>`
+        ).join('')
+      : '<span class="text-gray-400 text-xs">Keine</span>';
+
+    // Active diagnoses
+    const diagHtml = d.active_diagnoses.length
+      ? d.active_diagnoses.map(x =>
+          `<span class="preop-pill"><strong>${x.icd_code}</strong> ${x.description}</span>`
+        ).join('')
+      : '<span class="text-gray-400 text-xs">Keine aktiven Diagnosen</span>';
+
+    // Active medications
+    const medHtml = d.active_prescriptions.length
+      ? d.active_prescriptions.map(m =>
+          `<span class="preop-pill">💊 <strong>${m.drug_name}</strong> ${m.dosage}${m.unit} ${m.frequency} <span class="opacity-60">(${m.route_display||m.route})</span></span>`
+        ).join('')
+      : '<span class="text-gray-400 text-xs">Keine aktiven Medikamente</span>';
+
+    // Past surgeries
+    const surgHtml = d.past_surgeries.length
+      ? d.past_surgeries.map(s =>
+          `<span class="preop-pill">🏥 ${s.procedure}${s.ops_code?' ('+s.ops_code+')':''} · ${formatDate(s.date)}</span>`
+        ).join('')
+      : '<span class="text-gray-400 text-xs">Keine bekannten Voroperationen</span>';
+
+    // Vitals
+    let vitalsHtml = '<span class="text-gray-400 text-xs">Keine Vitalzeichen erfasst</span>';
+    if (d.latest_vitals) {
+      const v = d.latest_vitals;
+      const ts = v.timestamp ? new Date(v.timestamp).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '–';
+      vitalsHtml = `
+        <div class="text-xs text-gray-400 mb-1">Zuletzt gemessen: ${ts}${v.measured_by?' · '+v.measured_by:''}</div>
+        <div class="preop-vitals-grid">
+          <div class="preop-vital-box"><div class="val">${(v.systolic_bp&&v.diastolic_bp)?v.systolic_bp+'/'+v.diastolic_bp:'–'}</div><div class="lbl">Blutdruck mmHg</div></div>
+          <div class="preop-vital-box"><div class="val">${v.heart_rate||'–'}</div><div class="lbl">HF bpm</div></div>
+          <div class="preop-vital-box"><div class="val">${v.temperature||'–'}</div><div class="lbl">Temp. °C</div></div>
+          <div class="preop-vital-box"><div class="val">${v.oxygen_sat||'–'}</div><div class="lbl">SpO₂ %</div></div>
+          <div class="preop-vital-box"><div class="val">${v.weight||'–'}</div><div class="lbl">Gewicht kg</div></div>
+          <div class="preop-vital-box"><div class="val">${v.height||'–'}</div><div class="lbl">Größe cm</div></div>
+          <div class="preop-vital-box"><div class="val">${v.bmi||'–'}</div><div class="lbl">BMI</div></div>
+          <div class="preop-vital-box"><div class="val">${v.oxygen_sat ? (v.oxygen_sat>=95?'✓':'⚠️') : '–'}</div><div class="lbl">SpO₂ Status</div></div>
+        </div>`;
+    }
+
+    // Recent labs
+    const labHtml = d.recent_lab_results.length
+      ? `<div class="overflow-x-auto"><table class="w-full text-xs">
+          <thead><tr class="text-gray-400 uppercase">
+            <th class="text-left py-1 pr-3">Test</th><th class="text-left py-1 pr-3">Wert</th>
+            <th class="text-left py-1 pr-3">Einheit</th><th class="text-left py-1 pr-3">Referenz</th>
+            <th class="text-left py-1">Status</th>
+          </tr></thead>
+          <tbody>${d.recent_lab_results.map(l=>{
+            const lc={normal:'text-green-700',elevated:'text-red-600 font-bold',low:'text-yellow-600 font-bold',critical:'text-red-700 font-black'};
+            return `<tr class="border-t border-gray-100">
+              <td class="py-1 pr-3 font-medium">${l.test_name}</td>
+              <td class="py-1 pr-3 ${lc[l.status]||''}">${l.value}</td>
+              <td class="py-1 pr-3 text-gray-500">${l.unit||'–'}</td>
+              <td class="py-1 pr-3 text-gray-500">${l.reference_range||'–'}</td>
+              <td class="py-1"><span class="px-1.5 py-0.5 rounded text-xs ${lc[l.status]||'text-gray-500'}">${l.status_display||l.status}</span></td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table></div>`
+      : '<span class="text-gray-400 text-xs">Keine Laborbefunde vorhanden</span>';
+
+    // Anamnesis notes
+    const notesHtml = d.anamnesis_notes.length
+      ? d.anamnesis_notes.map(n =>
+          `<div class="border-l-2 border-blue-300 pl-2 mb-1">
+            <div class="text-xs text-gray-400">${n.note_type_display} · ${new Date(n.created_at).toLocaleDateString('de-DE')} · ${n.author}</div>
+            <div class="text-xs text-gray-700 line-clamp-2">${n.content}</div>
+          </div>`).join('')
+      : '<span class="text-gray-400 text-xs">Keine Anamnesenotizen vorhanden</span>';
+
+    panel.innerHTML = `
+      <div class="preop-panel">
+        <div class="preop-header" onclick="this.nextElementSibling.classList.toggle('hidden')">
+          📋 Anamnese – ${d.patient_name} &nbsp;
+          <span style="font-weight:400;opacity:.8;font-size:.72rem">
+            ${d.allergies.length} Allergie(n) · ${d.conditions.length} Vorerkrankung(en) · ${d.active_prescriptions.length} Medikament(e) aktiv
+          </span>
+          <span style="font-size:.85rem">▾</span>
+        </div>
+        <div class="preop-body">
+          ${allergyAlert}
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="preop-section">
+              <div class="preop-section-title">⛔ Allergien & Unverträglichkeiten</div>
+              <div>${allergyHtml}</div>
+            </div>
+            <div class="preop-section">
+              <div class="preop-section-title">📋 Vorerkrankungen</div>
+              <div>${condHtml}</div>
+            </div>
+            <div class="preop-section">
+              <div class="preop-section-title">🔬 Aktive Diagnosen</div>
+              <div>${diagHtml}</div>
+            </div>
+            <div class="preop-section">
+              <div class="preop-section-title">💊 Aktive Medikation</div>
+              <div>${medHtml}</div>
+            </div>
+          </div>
+          <div class="preop-section mt-3">
+            <div class="preop-section-title">🏥 Voroperationen</div>
+            <div>${surgHtml}</div>
+          </div>
+          <div class="preop-section mt-3">
+            <div class="preop-section-title">❤️ Letzte Vitalzeichen</div>
+            ${vitalsHtml}
+          </div>
+          <div class="preop-section mt-3">
+            <div class="preop-section-title">🧪 Aktuelle Laborbefunde</div>
+            ${labHtml}
+          </div>
+          <div class="preop-section mt-3">
+            <div class="preop-section-title">📝 Anamnesenotizen</div>
+            ${notesHtml}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function populateOpSelects() {
+    // Patients
+    const pSel = document.getElementById('opPatientSel');
+    if (pSel) {
+      pSel.innerHTML = '<option value="">– Patient auswählen –</option>' +
+        allPatients.map(p=>`<option value="${p.id}">${p.last_name}, ${p.first_name}</option>`).join('');
+      pSel.onchange = async () => {
+        const pid = pSel.value;
+        const admSel = document.getElementById('opAdmissionSel');
+
+        // Load anamnesis panel
+        loadPreopPanel(pid, 'opAnamnesePanel');
+
+        if (!pid) { admSel.innerHTML = '<option value="">–</option>'; return; }
+        const r = await fetch(`${CLIN_API}/admissions/?patient=${pid}`).catch(()=>null);
+        const adms = r?.ok ? await r.json() : [];
+        admSel.innerHTML = '<option value="">–</option>' +
+          adms.map(a=>`<option value="${a.id}">${formatDate(a.admission_date)} · ${a.reason}</option>`).join('');
+      };
+    }
+    // Rooms
+    const rSel = document.getElementById('opRoomSel');
+    if (rSel) {
+      rSel.innerHTML = '<option value="">– kein Saal –</option>' +
+        allOpRooms.filter(r=>r.status==='available').map(r=>`<option value="${r.id}">${r.name}</option>`).join('');
+    }
+  }
+
+  async function populateOpOperationSelect(selId) {
+    const sel = document.getElementById(selId);
+    if (!sel) return;
+    const res = await fetch(`${OP_API}/operations/`).catch(()=>null);
+    const ops = res?.ok ? await res.json() : [];
+    allOperations = ops;
+    sel.innerHTML = '<option value="">– Operation auswählen –</option>' +
+      ops.map(o=>`<option value="${o.id}">${formatDate(o.planned_date)} · ${o.patient_name} · ${o.name}</option>`).join('');
+
+    // For anesthesia page: load anamnesis when operation is selected
+    if (selId === 'anOpSel') {
+      sel.onchange = () => {
+        const opId = sel.value;
+        const op   = allOperations.find(o => String(o.id) === opId);
+        loadPreopPanel(op?.patient || null, 'anAnamnesePanel');
+      };
+    }
+  }
+
+  async function submitOperation(e) {
+    e.preventDefault();
+    const form = e.target, btn = form.querySelector('button[type="submit"]');
+    const msg  = document.getElementById('opNewFormMsg');
+    const data = Object.fromEntries(new FormData(form));
+    ['admission','operation_room'].forEach(k => { if (!data[k]) delete data[k]; });
+    setLoading(btn, true, 'Operation speichern');
+    try {
+      const res = await fetch(`${OP_API}/operations/`, {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)
+      });
+      if (res.ok) {
+        showMsg(msg, '✓ Operation erfolgreich geplant.', true);
+        form.reset();
+        const r2 = await fetch(`${OP_API}/operations/`).catch(()=>null);
+        if (r2?.ok) allOperations = await r2.json();
+      } else { showMsg(msg, 'Fehler: ' + JSON.stringify(await res.json()), false); }
+    } catch { showMsg(msg, 'Serververbindung fehlgeschlagen.', false); }
+    finally { setLoading(btn, false, 'Operation speichern'); }
+  }
+
+  async function submitAnesthesia(e) {
+    e.preventDefault();
+    const form = e.target, btn = form.querySelector('button[type="submit"]');
+    const msg  = document.getElementById('anesthesiaFormMsg');
+    const data = Object.fromEntries(new FormData(form));
+    ['start_time','end_time','asa_classification'].forEach(k => { if (!data[k]) delete data[k]; });
+    setLoading(btn, true, 'Narkoseprotokoll speichern');
+    try {
+      const res = await fetch(`${OP_API}/anesthesia/`, {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)
+      });
+      if (res.ok) { showMsg(msg, '✓ Narkoseprotokoll gespeichert.', true); form.reset(); }
+      else { showMsg(msg, 'Fehler: ' + JSON.stringify(await res.json()), false); }
+    } catch { showMsg(msg, 'Serververbindung fehlgeschlagen.', false); }
+    finally { setLoading(btn, false, 'Narkoseprotokoll speichern'); }
+  }
+
+  async function submitOpReport(e) {
+    e.preventDefault();
+    const form = e.target, btn = form.querySelector('button[type="submit"]');
+    const msg  = document.getElementById('opReportFormMsg');
+    const data = Object.fromEntries(new FormData(form));
+    if (!data.blood_loss_ml) delete data.blood_loss_ml;
+    setLoading(btn, true, 'OP-Bericht speichern');
+    try {
+      const res = await fetch(`${OP_API}/reports/`, {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)
+      });
+      if (res.ok) { showMsg(msg, '✓ OP-Bericht gespeichert.', true); form.reset(); }
+      else { showMsg(msg, 'Fehler: ' + JSON.stringify(await res.json()), false); }
+    } catch { showMsg(msg, 'Serververbindung fehlgeschlagen.', false); }
+    finally { setLoading(btn, false, 'OP-Bericht speichern'); }
   }
 
   // Nav ripple on click
