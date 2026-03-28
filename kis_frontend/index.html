@@ -1081,7 +1081,7 @@
         <li>Version <span class="font-medium text-gray-600">1.0.0</span></li>
         <li>Backend <span class="font-medium text-gray-600">Django 6.0 · DRF</span></li>
         <li>Datenbank <span class="font-medium text-gray-600">SQLite3</span></li>
-        <li>API <span class="font-medium text-gray-600 cursor-pointer hover:text-blue-600" onclick="window.open('http://127.0.0.1:8000/api/')">http://127.0.0.1:8000/api/</span></li>
+        <li>API <span class="font-medium text-gray-600 cursor-pointer hover:text-blue-600" onclick="window.open('https://kis-backend-98jx.onrender.com/api/')">http://127.0.0.1:8000/api/</span></li>
       </ul>
     </div>
 
@@ -1110,7 +1110,7 @@
 </style>
 
 <script>
-  const API = 'http://127.0.0.1:8000/api';
+  const API = 'https://kis-backend-98jx.onrender.com/api';
   let allPatients = [], allStations = [], allAppointments = [];
   let calView = 'month', calDate = new Date();
   let bedChart = null;
@@ -1118,8 +1118,8 @@
   // ══════════════════════════════════════════════════════
   // Navigation
   // ══════════════════════════════════════════════════════
-  const CLIN_API = 'http://127.0.0.1:8000/api/clinical';
-  const OP_API  = 'http://127.0.0.1:8000/api/operation';
+  const CLIN_API = 'https://kis-backend-98jx.onrender.com/api/clinical';
+  const OP_API  = 'https://kis-backend-98jx.onrender.com/api/operation';
   const PAGES = ['dashboard','calendar','patients','new-patient','new-appointment','stations','new-station',
     'clinical','new-admission','new-diagnosis','new-prescription','new-lab','new-vitals',
     'new-history','new-note','new-procedure','new-referral','new-discharge',
