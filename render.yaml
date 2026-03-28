@@ -1,0 +1,29 @@
+databases:
+  - name: kis-db
+    databaseName: kisSystem
+    user: kisSystem
+    plan: free
+
+services:
+  - type: web
+    name: kis-backend
+    runtime: docker
+    dockerfilePath: ./kis_backend/Dockerfile
+    dockerContext: ./kis_backend
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: kis-db
+          property: connectionString
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: "*"
+
+  - type: web
+    name: kis-frontend
+    runtime: docker
+    dockerfilePath: ./kis_frontend/Dockerfile
+    dockerContext: ./kis_frontend
+    plan: free
