@@ -11,6 +11,7 @@ services:
     dockerfilePath: ./kis_backend/Dockerfile
     dockerContext: ./kis_backend
     plan: free
+
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -20,6 +21,8 @@ services:
         value: "False"
       - key: ALLOWED_HOSTS
         value: "*"
+      - key: SECRET_KEY
+        generateValue: true
 
   - type: web
     name: kis-frontend

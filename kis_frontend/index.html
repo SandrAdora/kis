@@ -1794,8 +1794,8 @@
     const msgId = formId.replace('Form','FormMsg');
     const msg  = document.getElementById(msgId);
     const data = Object.fromEntries(new FormData(form));
-    // Remove empty optional fields
-    ['admission','bed','end_date','discharge_date','result_date'].forEach(k => { if (!data[k]) delete data[k]; });
+    // Remove all empty strings so nullable/numeric fields are omitted rather than sent as ""
+    Object.keys(data).forEach(k => { if (data[k] === '') delete data[k]; });
     setLoading(btn, true, label);
     try {
       const res = await fetch(`${CLIN_API}/${endpoint}/`, {
@@ -2155,7 +2155,7 @@
     const form = e.target, btn = form.querySelector('button[type="submit"]');
     const msg  = document.getElementById('opNewFormMsg');
     const data = Object.fromEntries(new FormData(form));
-    ['admission','operation_room'].forEach(k => { if (!data[k]) delete data[k]; });
+    Object.keys(data).forEach(k => { if (data[k] === '') delete data[k]; });
     setLoading(btn, true, 'Operation speichern');
     try {
       const res = await fetch(`${OP_API}/operations/`, {
@@ -2176,7 +2176,7 @@
     const form = e.target, btn = form.querySelector('button[type="submit"]');
     const msg  = document.getElementById('anesthesiaFormMsg');
     const data = Object.fromEntries(new FormData(form));
-    ['start_time','end_time','asa_classification'].forEach(k => { if (!data[k]) delete data[k]; });
+    Object.keys(data).forEach(k => { if (data[k] === '') delete data[k]; });
     setLoading(btn, true, 'Narkoseprotokoll speichern');
     try {
       const res = await fetch(`${OP_API}/anesthesia/`, {
@@ -2193,7 +2193,7 @@
     const form = e.target, btn = form.querySelector('button[type="submit"]');
     const msg  = document.getElementById('opReportFormMsg');
     const data = Object.fromEntries(new FormData(form));
-    if (!data.blood_loss_ml) delete data.blood_loss_ml;
+    Object.keys(data).forEach(k => { if (data[k] === '') delete data[k]; });
     setLoading(btn, true, 'OP-Bericht speichern');
     try {
       const res = await fetch(`${OP_API}/reports/`, {

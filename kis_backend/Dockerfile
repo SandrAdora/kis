@@ -34,4 +34,4 @@ EXPOSE 8000
 # 0.0.0.0 makes Django listen on all interfaces inside the container so that
 # traffic forwarded from the host can actually reach it.
 # For production you would swap this for gunicorn or uvicorn.
-CMD ["gunicorn", "kis_backend.wsgi:application", "--bind", "0.0.0.0:8000"]
+CMD python manage.py migrate --noinput && gunicorn kis_backend.wsgi:application --bind 0.0.0.0:8000
