@@ -10,4 +10,6 @@ psycopg2-binary
 python-dotenv
 websocket-client
 dotenv
+gunicorn
+dj-database-url
 
