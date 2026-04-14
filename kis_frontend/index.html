@@ -7,6 +7,7 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <style>
     /* ── Status colors ── */
     .status-scheduled  { background:#dbeafe; color:#1d4ed8; }
@@ -152,6 +153,10 @@
       display:flex; align-items:center; gap:.4rem; margin-bottom:.6rem; }
     @keyframes preopIn { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
     .preop-panel { animation:preopIn .35s cubic-bezier(.16,1,.3,1) both; }
+
+    /* ── Icon helpers ── */
+    .ki { width:1em; height:1em; display:inline-block; vertical-align:-0.15em; flex-shrink:0; }
+    .sdot { display:inline-block; width:8px; height:8px; border-radius:50%; vertical-align:middle; flex-shrink:0; }
   </style>
 </head>
 <body class="bg-gray-100 min-h-screen font-sans flex flex-col" style="min-height:100vh;">
@@ -169,83 +174,83 @@
   <aside class="w-56 min-w-56 bg-white border-r border-gray-200 flex flex-col overflow-y-auto anim-header">
     <div class="nav-section">Übersicht</div>
     <div class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard')">
-      <span>📊</span> Dashboard
+      <i data-lucide="layout-dashboard" class="ki"></i> Dashboard
     </div>
     <div class="nav-item" id="nav-calendar" onclick="showPage('calendar')">
-      <span>📅</span> Kalender
+      <i data-lucide="calendar" class="ki"></i> Kalender
     </div>
 
     <div class="nav-section">Patienten</div>
     <div class="nav-item" id="nav-patients" onclick="showPage('patients')">
-      <span>👥</span> Patientenliste
+      <i data-lucide="users" class="ki"></i> Patientenliste
     </div>
     <div class="nav-item" id="nav-new-patient" onclick="showPage('new-patient')">
-      <span>➕</span> Neue Patientenakte
+      <i data-lucide="user-plus" class="ki"></i> Neue Patientenakte
     </div>
 
     <div class="nav-section">Termine</div>
     <div class="nav-item" id="nav-new-appointment" onclick="showPage('new-appointment')">
-      <span>🗓</span> Neuer Termin
+      <i data-lucide="calendar-plus" class="ki"></i> Neuer Termin
     </div>
 
     <div class="nav-section">Stationen</div>
     <div class="nav-item" id="nav-stations" onclick="showPage('stations')">
-      <span>🏥</span> Stationen & Betten
+      <i data-lucide="building-2" class="ki"></i> Stationen & Betten
     </div>
     <div class="nav-item" id="nav-new-station" onclick="showPage('new-station')">
-      <span>➕</span> Neue Station
+      <i data-lucide="plus" class="ki"></i> Neue Station
     </div>
 
     <div class="nav-section">Klinisch</div>
     <div class="nav-item" id="nav-clinical" onclick="showPage('clinical')">
-      <span>🗂</span> Klinische Akte
+      <i data-lucide="folder-open" class="ki"></i> Klinische Akte
     </div>
     <div class="nav-item" id="nav-new-admission" onclick="showPage('new-admission')">
-      <span>🛏</span> Aufnahme
+      <i data-lucide="bed" class="ki"></i> Aufnahme
     </div>
     <div class="nav-item" id="nav-new-diagnosis" onclick="showPage('new-diagnosis')">
-      <span>🔬</span> Diagnose
+      <i data-lucide="microscope" class="ki"></i> Diagnose
     </div>
     <div class="nav-item" id="nav-new-prescription" onclick="showPage('new-prescription')">
-      <span>💊</span> Medikament
+      <i data-lucide="pill" class="ki"></i> Medikament
     </div>
     <div class="nav-item" id="nav-new-lab" onclick="showPage('new-lab')">
-      <span>🧪</span> Laborbefund
+      <i data-lucide="flask-conical" class="ki"></i> Laborbefund
     </div>
     <div class="nav-item" id="nav-new-vitals" onclick="showPage('new-vitals')">
-      <span>❤️</span> Vitalzeichen
+      <i data-lucide="heart-pulse" class="ki"></i> Vitalzeichen
     </div>
     <div class="nav-item" id="nav-new-history" onclick="showPage('new-history')">
-      <span>📖</span> Anamnese
+      <i data-lucide="book-open" class="ki"></i> Anamnese
     </div>
     <div class="nav-item" id="nav-new-note" onclick="showPage('new-note')">
-      <span>📝</span> Klinische Notiz
+      <i data-lucide="file-pen" class="ki"></i> Klinische Notiz
     </div>
     <div class="nav-item" id="nav-new-procedure" onclick="showPage('new-procedure')">
-      <span>⚕️</span> Prozedur
+      <i data-lucide="stethoscope" class="ki"></i> Prozedur
     </div>
     <div class="nav-item" id="nav-new-referral" onclick="showPage('new-referral')">
-      <span>🔀</span> Überweisung
+      <i data-lucide="arrow-right-left" class="ki"></i> Überweisung
     </div>
     <div class="nav-item" id="nav-new-discharge" onclick="showPage('new-discharge')">
-      <span>📄</span> Entlassbrief
+      <i data-lucide="file-text" class="ki"></i> Entlassbrief
     </div>
 
     <div class="nav-section">Operationen</div>
     <div class="nav-item" id="nav-op-dashboard" onclick="showPage('op-dashboard')">
-      <span>🔪</span> OP-Übersicht
+      <i data-lucide="scissors" class="ki"></i> OP-Übersicht
     </div>
     <div class="nav-item" id="nav-op-rooms" onclick="showPage('op-rooms')">
-      <span>🏛</span> OP-Säle
+      <i data-lucide="door-open" class="ki"></i> OP-Säle
     </div>
     <div class="nav-item" id="nav-op-new" onclick="showPage('op-new')">
-      <span>➕</span> OP planen
+      <i data-lucide="plus" class="ki"></i> OP planen
     </div>
     <div class="nav-item" id="nav-op-anesthesia" onclick="showPage('op-anesthesia')">
-      <span>💉</span> Narkoseprotokoll
+      <i data-lucide="syringe" class="ki"></i> Narkoseprotokoll
     </div>
     <div class="nav-item" id="nav-op-report" onclick="showPage('op-report')">
-      <span>📋</span> OP-Bericht
+      <i data-lucide="clipboard-list" class="ki"></i> OP-Bericht
     </div>
   </aside>
 
@@ -338,7 +343,7 @@
       <div id="patientDetail" class="hidden bg-white rounded-xl shadow p-5 anim-detail">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg font-semibold text-gray-800" id="detailName"></h3>
-          <button onclick="closeDetail()" class="text-gray-400 hover:text-gray-600 text-lg">✕</button>
+          <button onclick="closeDetail()" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="ki" style="width:18px;height:18px;"></i></button>
         </div>
         <div class="grid grid-cols-2 gap-3 text-sm mb-5" id="detailInfo"></div>
         <h4 class="font-semibold text-gray-700 mb-2 text-sm">Termine</h4>
@@ -1423,7 +1428,12 @@
     allBeds.forEach(b => { (bedsByStation[b.station] ??= []).push(b); });
 
     const statusColors = {free:'bed-free', occupied:'bed-occupied', reserved:'bed-reserved', maintenance:'bed-maintenance'};
-    const statusIcons  = {free:'🟢', occupied:'🔴', reserved:'🟡', maintenance:'⚫'};
+    const statusIcons  = {
+      free:        '<span class="sdot" style="background:#22c55e;"></span>',
+      occupied:    '<span class="sdot" style="background:#ef4444;"></span>',
+      reserved:    '<span class="sdot" style="background:#facc15;"></span>',
+      maintenance: '<span class="sdot" style="background:#6b7280;"></span>'
+    };
     const statusDE     = {free:'Frei', occupied:'Belegt', reserved:'Reserviert', maintenance:'Außer Betrieb'};
 
     el.innerHTML = stations.map((s,si) => {
@@ -1437,8 +1447,8 @@
               <div class="text-xs text-gray-500">Etage ${s.floor}${s.description?' · '+s.description:''}</div>
             </div>
             <div class="flex gap-3 text-sm">
-              <span class="bg-green-50 text-green-700 px-2 py-0.5 rounded-full font-medium">🟢 ${s.free_beds} frei</span>
-              <span class="bg-red-50 text-red-700 px-2 py-0.5 rounded-full font-medium">🔴 ${s.occupied_beds} belegt</span>
+              <span class="bg-green-50 text-green-700 px-2 py-0.5 rounded-full font-medium flex items-center gap-1"><span class="sdot" style="background:#22c55e;"></span> ${s.free_beds} frei</span>
+              <span class="bg-red-50 text-red-700 px-2 py-0.5 rounded-full font-medium flex items-center gap-1"><span class="sdot" style="background:#ef4444;"></span> ${s.occupied_beds} belegt</span>
               <span class="text-gray-500">${s.total_beds} gesamt</span>
             </div>
           </div>
@@ -1460,7 +1470,9 @@
             </div>` : '<div class="text-sm text-gray-400">Noch keine Betten in dieser Station.</div>'}
         </div>`;
     }).join('');
+    lucide.createIcons();
   }
+
 
   // ══════════════════════════════════════════════════════
   // Form submissions
@@ -1657,17 +1669,17 @@
     empty.classList.add('hidden');
 
     const tabDefs = [
-      { id:'admissions',   label:'🛏 Aufnahmen',      render: renderAdmissionsTab },
-      { id:'diagnoses',    label:'🔬 Diagnosen',       render: renderDiagnosesTab },
-      { id:'prescriptions',label:'💊 Medikamente',     render: renderPrescriptionsTab },
-      { id:'lab_results',  label:'🧪 Labor',           render: renderLabTab },
-      { id:'vital_signs',  label:'❤️ Vitals',          render: renderVitalsTab },
-      { id:'allergies',    label:'⚠️ Allergien',       render: renderAllergiesTab },
-      { id:'conditions',   label:'📋 Vorerkrankungen', render: renderConditionsTab },
-      { id:'surgeries',    label:'🏥 Operationen',     render: renderSurgeriesTab },
-      { id:'notes',        label:'📝 Notizen',         render: renderNotesTab },
-      { id:'procedures',   label:'⚕️ Prozeduren',      render: renderProceduresTab },
-      { id:'referrals',    label:'🔀 Überweisungen',   render: renderReferralsTab },
+      { id:'admissions',   label:'<i data-lucide="bed" class="ki"></i> Aufnahmen',            render: renderAdmissionsTab },
+      { id:'diagnoses',    label:'<i data-lucide="microscope" class="ki"></i> Diagnosen',      render: renderDiagnosesTab },
+      { id:'prescriptions',label:'<i data-lucide="pill" class="ki"></i> Medikamente',          render: renderPrescriptionsTab },
+      { id:'lab_results',  label:'<i data-lucide="flask-conical" class="ki"></i> Labor',       render: renderLabTab },
+      { id:'vital_signs',  label:'<i data-lucide="heart-pulse" class="ki"></i> Vitals',        render: renderVitalsTab },
+      { id:'allergies',    label:'<i data-lucide="triangle-alert" class="ki"></i> Allergien',  render: renderAllergiesTab },
+      { id:'conditions',   label:'<i data-lucide="clipboard-list" class="ki"></i> Vorerkrankungen', render: renderConditionsTab },
+      { id:'surgeries',    label:'<i data-lucide="building-2" class="ki"></i> Operationen',    render: renderSurgeriesTab },
+      { id:'notes',        label:'<i data-lucide="file-pen" class="ki"></i> Notizen',          render: renderNotesTab },
+      { id:'procedures',   label:'<i data-lucide="stethoscope" class="ki"></i> Prozeduren',    render: renderProceduresTab },
+      { id:'referrals',    label:'<i data-lucide="arrow-right-left" class="ki"></i> Überweisungen', render: renderReferralsTab },
     ];
 
     let activeTab = tabDefs[0].id;
@@ -1681,6 +1693,7 @@
         </button>`).join('');
       const tab = tabDefs.find(t=>t.id===activeTab);
       document.getElementById('clinicalTabContent').innerHTML = tab.render(d[tab.id]||[]);
+      lucide.createIcons();
     }
 
     window.switchClinTab = function(id) {
@@ -1817,7 +1830,12 @@
                                occupied:'bg-red-50 border-red-300 text-red-700',
                                cleaning:'bg-yellow-50 border-yellow-300 text-yellow-700',
                                maintenance:'bg-gray-100 border-gray-300 text-gray-500' };
-  const OP_ROOM_ICON      = { available:'🟢', occupied:'🔴', cleaning:'🟡', maintenance:'⚫' };
+  const OP_ROOM_ICON      = {
+    available:   '<span class="sdot" style="background:#22c55e;"></span>',
+    occupied:    '<span class="sdot" style="background:#ef4444;"></span>',
+    cleaning:    '<span class="sdot" style="background:#facc15;"></span>',
+    maintenance: '<span class="sdot" style="background:#6b7280;"></span>'
+  };
   const OP_ROOM_DE        = { available:'Verfügbar', occupied:'Belegt', cleaning:'Reinigung', maintenance:'Außer Betrieb' };
 
   async function loadOpDashboard() {
@@ -1842,7 +1860,7 @@
         roomEl.innerHTML = allOpRooms.map((r, i) => `
           <div class="border rounded-lg p-3 anim-panel" style="animation-delay:${i*.06}s;
             ${r.status==='occupied'?'border-red-300 bg-red-50':r.status==='available'?'border-green-300 bg-green-50':r.status==='cleaning'?'border-yellow-300 bg-yellow-50':'border-gray-300 bg-gray-50'}">
-            <div class="font-semibold text-sm">${OP_ROOM_ICON[r.status]} ${r.name}</div>
+            <div class="font-semibold text-sm flex items-center gap-1">${OP_ROOM_ICON[r.status]} ${r.name}</div>
             <div class="text-xs text-gray-500 mt-0.5">${r.floor||'–'} · ${OP_ROOM_DE[r.status]}</div>
           </div>`).join('');
       }
@@ -1903,7 +1921,7 @@
         ${r.status==='available'?'border-green-400':r.status==='occupied'?'border-red-400':r.status==='cleaning'?'border-yellow-400':'border-gray-300'}"
         style="animation-delay:${i*.07}s">
         <div class="flex items-center justify-between mb-2">
-          <h3 class="font-bold text-gray-800">${OP_ROOM_ICON[r.status]} ${r.name}</h3>
+          <h3 class="font-bold text-gray-800 flex items-center gap-1">${OP_ROOM_ICON[r.status]} ${r.name}</h3>
           <select onchange="updateRoomStatus(${r.id}, this.value)"
             class="text-xs border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-400">
             ${['available','occupied','cleaning','maintenance'].map(s=>
@@ -1953,7 +1971,8 @@
     const panel = document.getElementById(panelId);
     if (!patientId) { panel.classList.add('hidden'); return; }
 
-    panel.innerHTML = `<div class="preop-panel"><div class="preop-header">⏳ Lade Anamnese…</div></div>`;
+    panel.innerHTML = `<div class="preop-panel"><div class="preop-header"><i data-lucide="loader" class="ki"></i> Lade Anamnese…</div></div>`;
+    lucide.createIcons();
     panel.classList.remove('hidden');
 
     const res = await fetch(`${OP_API}/patients/${patientId}/preop-summary/`).catch(()=>null);
@@ -1961,19 +1980,23 @@
     const d = await res.json();
 
     const allergySeverityClass = { severe:'allergy-badge-severe', moderate:'allergy-badge-moderate', mild:'allergy-badge-mild' };
-    const allergySeverityIcon  = { severe:'⛔', moderate:'⚠️', mild:'ℹ️' };
+    const allergySeverityIcon  = {
+      severe:   '<i data-lucide="ban" class="ki"></i>',
+      moderate: '<i data-lucide="triangle-alert" class="ki"></i>',
+      mild:     '<i data-lucide="info" class="ki"></i>'
+    };
 
     // Allergy warning banner
     const severeAllergies = d.allergies.filter(a => a.severity === 'severe');
     const allergyAlert = severeAllergies.length
-      ? `<div class="preop-alert">⛔ Schwere Allergien: ${severeAllergies.map(a=>`<strong>${a.substance}</strong>`).join(', ')}</div>`
+      ? `<div class="preop-alert"><i data-lucide="shield-alert" class="ki"></i> Schwere Allergien: ${severeAllergies.map(a=>`<strong>${a.substance}</strong>`).join(', ')}</div>`
       : '';
 
     // Allergies section
     const allergyHtml = d.allergies.length
       ? d.allergies.map(a =>
           `<span class="allergy-badge ${allergySeverityClass[a.severity]||'allergy-badge-mild'}">
-            ${allergySeverityIcon[a.severity]||'ℹ️'} ${a.substance}
+            ${allergySeverityIcon[a.severity]||'<i data-lucide="info" class="ki"></i>'} ${a.substance}
             ${a.reaction ? `<span style="font-weight:400;opacity:.8">– ${a.reaction}</span>` : ''}
           </span>`).join('')
       : '<span class="text-gray-400 text-xs">Keine bekannten Allergien</span>';
@@ -1995,14 +2018,14 @@
     // Active medications
     const medHtml = d.active_prescriptions.length
       ? d.active_prescriptions.map(m =>
-          `<span class="preop-pill">💊 <strong>${m.drug_name}</strong> ${m.dosage}${m.unit} ${m.frequency} <span class="opacity-60">(${m.route_display||m.route})</span></span>`
+          `<span class="preop-pill"><i data-lucide="pill" class="ki"></i> <strong>${m.drug_name}</strong> ${m.dosage}${m.unit} ${m.frequency} <span class="opacity-60">(${m.route_display||m.route})</span></span>`
         ).join('')
       : '<span class="text-gray-400 text-xs">Keine aktiven Medikamente</span>';
 
     // Past surgeries
     const surgHtml = d.past_surgeries.length
       ? d.past_surgeries.map(s =>
-          `<span class="preop-pill">🏥 ${s.procedure}${s.ops_code?' ('+s.ops_code+')':''} · ${formatDate(s.date)}</span>`
+          `<span class="preop-pill"><i data-lucide="building-2" class="ki"></i> ${s.procedure}${s.ops_code?' ('+s.ops_code+')':''} · ${formatDate(s.date)}</span>`
         ).join('')
       : '<span class="text-gray-400 text-xs">Keine bekannten Voroperationen</span>';
 
@@ -2021,7 +2044,7 @@
           <div class="preop-vital-box"><div class="val">${v.weight||'–'}</div><div class="lbl">Gewicht kg</div></div>
           <div class="preop-vital-box"><div class="val">${v.height||'–'}</div><div class="lbl">Größe cm</div></div>
           <div class="preop-vital-box"><div class="val">${v.bmi||'–'}</div><div class="lbl">BMI</div></div>
-          <div class="preop-vital-box"><div class="val">${v.oxygen_sat ? (v.oxygen_sat>=95?'✓':'⚠️') : '–'}</div><div class="lbl">SpO₂ Status</div></div>
+          <div class="preop-vital-box"><div class="val">${v.oxygen_sat ? (v.oxygen_sat>=95?'✓':'<i data-lucide="triangle-alert" class="ki" style="color:#f59e0b;"></i>') : '–'}</div><div class="lbl">SpO₂ Status</div></div>
         </div>`;
     }
 
@@ -2058,7 +2081,7 @@
     panel.innerHTML = `
       <div class="preop-panel">
         <div class="preop-header" onclick="this.nextElementSibling.classList.toggle('hidden')">
-          📋 Anamnese – ${d.patient_name} &nbsp;
+          <i data-lucide="clipboard-list" class="ki"></i> Anamnese – ${d.patient_name} &nbsp;
           <span style="font-weight:400;opacity:.8;font-size:.72rem">
             ${d.allergies.length} Allergie(n) · ${d.conditions.length} Vorerkrankung(en) · ${d.active_prescriptions.length} Medikament(e) aktiv
           </span>
@@ -2068,40 +2091,41 @@
           ${allergyAlert}
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="preop-section">
-              <div class="preop-section-title">⛔ Allergien & Unverträglichkeiten</div>
+              <div class="preop-section-title"><i data-lucide="ban" class="ki"></i> Allergien & Unverträglichkeiten</div>
               <div>${allergyHtml}</div>
             </div>
             <div class="preop-section">
-              <div class="preop-section-title">📋 Vorerkrankungen</div>
+              <div class="preop-section-title"><i data-lucide="clipboard-list" class="ki"></i> Vorerkrankungen</div>
               <div>${condHtml}</div>
             </div>
             <div class="preop-section">
-              <div class="preop-section-title">🔬 Aktive Diagnosen</div>
+              <div class="preop-section-title"><i data-lucide="microscope" class="ki"></i> Aktive Diagnosen</div>
               <div>${diagHtml}</div>
             </div>
             <div class="preop-section">
-              <div class="preop-section-title">💊 Aktive Medikation</div>
+              <div class="preop-section-title"><i data-lucide="pill" class="ki"></i> Aktive Medikation</div>
               <div>${medHtml}</div>
             </div>
           </div>
           <div class="preop-section mt-3">
-            <div class="preop-section-title">🏥 Voroperationen</div>
+            <div class="preop-section-title"><i data-lucide="building-2" class="ki"></i> Voroperationen</div>
             <div>${surgHtml}</div>
           </div>
           <div class="preop-section mt-3">
-            <div class="preop-section-title">❤️ Letzte Vitalzeichen</div>
+            <div class="preop-section-title"><i data-lucide="heart-pulse" class="ki"></i> Letzte Vitalzeichen</div>
             ${vitalsHtml}
           </div>
           <div class="preop-section mt-3">
-            <div class="preop-section-title">🧪 Aktuelle Laborbefunde</div>
+            <div class="preop-section-title"><i data-lucide="flask-conical" class="ki"></i> Aktuelle Laborbefunde</div>
             ${labHtml}
           </div>
           <div class="preop-section mt-3">
-            <div class="preop-section-title">📝 Anamnesenotizen</div>
+            <div class="preop-section-title"><i data-lucide="file-pen" class="ki"></i> Anamnesenotizen</div>
             ${notesHtml}
           </div>
         </div>
       </div>`;
+    lucide.createIcons();
   }
 
   function populateOpSelects() {
@@ -2219,6 +2243,7 @@
     });
   });
 
+  lucide.createIcons();
   bootLoad();
 </script>
 <div id="toastContainer"></div>
