@@ -3,6 +3,8 @@ Ein Kleins KIS-System der als Portfolio-Projekt und als Grundlage für ein echte
 Das System besteht aus mehreren Kernmodulen, die gemeinsam eine effiziente Verwaltung 
 von Patientendaten, Terminen, klinischen Abläufen und Operationen ermöglichen.
 
+live demo: [krankenhaus-informationssystem](https://kis-bnge.onrender.com)
+
 ## 1. Dashboard 
 Ein zentrales Kontrollzentrum für alle Rollen im System.
 Übersicht über Patienten, Termine, Stationen und Operationen
